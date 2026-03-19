@@ -1,0 +1,59 @@
+name: deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Create release archive
+        run: |
+          tar czf release.tgz \
+            --exclude=.git \
+            --exclude=build \
+            --exclude=.vscode \
+            .
+
+      - name: Upload release archive to EC2
+        run: |
+          scp -i ~/.ssh/id_ed25519 release.tgz \
+            "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/ooad-team01-${{ github.sha }}.tgz"
+
+      - name: Build on EC2 and switch current
+        run: |
+          ssh -i ~/.ssh/id_ed25519 "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" <<EOF
+            set -euo pipefail
+
+            APP_DIR="${{ vars.APP_DIR }}"
+            RELEASE_DIR="\$APP_DIR/releases/${{ github.sha }}"
+            ARCHIVE="/tmp/ooad-team01-${{ github.sha }}.tgz"
+
+            mkdir -p "\$RELEASE_DIR"
+            tar xzf "\$ARCHIVE" -C "\$RELEASE_DIR"
+
+            cmake -S "\$RELEASE_DIR" -B "\$RELEASE_DIR/build" -DCMAKE_BUILD_TYPE=Release
+            cmake --build "\$RELEASE_DIR/build" --parallel
+
+            cp "\$RELEASE_DIR/build/${{ vars.BINARY_NAME }}" "\$RELEASE_DIR/${{ vars.BINARY_NAME }}"
+            chmod +x "\$RELEASE_DIR/${{ vars.BINARY_NAME }}"
+
+            ln -sfn "\$RELEASE_DIR" "\$APP_DIR/current"
+          EOF
