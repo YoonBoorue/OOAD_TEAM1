@@ -1,13 +1,6 @@
+# [Build] 빌드 결과물은 로컬 환경마다 다르므로 커밋하지 않습니다.
 build/
-out/
-.vscode/
 
-*.exe
-*.o
-*.obj
-*.dll
-*.so
-*.dylib
-*.pdb
-
+# [System] 운영체제 및 에디터 임시 파일
 .DS_Store
+*.swp
