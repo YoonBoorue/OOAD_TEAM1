@@ -9,6 +9,9 @@ option(OOAD_ENABLE_COVERAGE "Enable coverage flags" OFF)
 
 add_library(ooad_core
     src/rvc/RobotController.cpp
+    src/rvc/DustProcessor.cpp
+    src/rvc/ObstacleProcessor.cpp
+    src/rvc/Modes.cpp
 )
 
 target_include_directories(ooad_core
