@@ -5,12 +5,11 @@
 int main() {
     rvc::RobotController controller;
 
-    rvc::SensorSnapshot sensors{
-        .frontObstacle = false,
-        .leftObstacle = false,
-        .rightObstacle = false,
-        .dustDetected = true
-    };
+    rvc::SensorSnapshot sensors{};
+    sensors.frontObstacle = false;
+    sensors.leftObstacle = false;
+    sensors.rightObstacle = false;
+    sensors.dustDetected = true;
 
     const auto command = controller.decide(sensors);
 
