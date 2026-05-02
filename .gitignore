@@ -1,7 +1,13 @@
 build/
+out/
 .vscode/
+
 *.exe
-*.obj
-*.pdb
-*.ilk
 *.o
+*.obj
+*.dll
+*.so
+*.dylib
+*.pdb
+
+.DS_Store
