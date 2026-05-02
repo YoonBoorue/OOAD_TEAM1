@@ -179,7 +179,7 @@ jobs:
 
       - name: Create release archive
         run: |
-          tar czf release.tgz \
+          tar czf "$RUNNER_TEMP/release.tgz" \
             --exclude=.git \
             --exclude=build \
             --exclude=.vscode \
@@ -187,7 +187,7 @@ jobs:
 
       - name: Upload release archive to EC2
         run: |
-          scp -i ~/.ssh/id_ed25519 release.tgz \
+          scp -i ~/.ssh/id_ed25519 "$RUNNER_TEMP/release.tgz" \
             "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/ooad-team01-${{ github.sha }}.tgz"
 
       - name: Build, test, simulate on EC2 and switch current
