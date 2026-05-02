@@ -91,9 +91,21 @@ jobs:
             src simulator tests
 
       - name: Clang-Tidy
+        shell: bash
         run: |
-          find src simulator tests -name '*.cpp' -print0 \
-            | xargs -0 clang-tidy -p build --
+          set -euo pipefail
+
+          mapfile -d '' files < <(find src simulator tests -name '*.cpp' -print0)
+
+          echo "clang-tidy target files:"
+          printf '%s\n' "${files[@]}"
+
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "No .cpp files found under src simulator tests"
+            exit 1
+          fi
+
+          clang-tidy -p build "${files[@]}"
 
   coverage:
     name: coverage
