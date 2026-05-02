@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "ms-vscode.cpptools",         // C/C++ IntelliSense, 디버깅
+    "ms-vscode.cmake-tools",    // CMake 프로젝트 관리 및 빌드
+    "matepec.vscode-googletestrunner", // Google Test 실행기 및 탐색기
+    "twxs.cmake",                 // CMake 파일 구문 강조
+    "sonarSource.sonarlint-vscode" // SonarLint 실시간 분석
+  ]
+}
