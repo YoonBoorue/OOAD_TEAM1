@@ -8,6 +8,7 @@ private:
     bool status;
 
 public:
+    BatteryDriver();
     void initialize();
     void turnOffBattery();
     void declineLV();

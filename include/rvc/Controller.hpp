@@ -19,6 +19,8 @@ private:
     DustProcessor* dustProcessor;
 
 public:
+    Controller();
+    ~Controller();
     bool startTimer();
     void powerButtonPressed();
     void startButtonPressed();

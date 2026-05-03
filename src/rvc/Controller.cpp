@@ -8,8 +8,25 @@
 
 namespace rvc {
 
+Controller::Controller()
+    : power(false)
+    , isNowCharging(false)
+    , currentMode(nullptr)
+    , batteryDriver(new BatteryDriver())
+    , cleanerDriver(new CleanerDriver())
+    , dustSensorDriver(new DustSensorDriver())
+    , dustProcessor(new DustProcessor())
+{}
+
+Controller::~Controller() {
+    delete batteryDriver;
+    delete cleanerDriver;
+    delete dustSensorDriver;
+    delete dustProcessor;
+    delete currentMode;
+}
+
 bool Controller::startTimer() {
-    // TODO
     return false;
 }
 

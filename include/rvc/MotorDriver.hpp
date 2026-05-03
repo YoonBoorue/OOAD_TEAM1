@@ -8,6 +8,7 @@ private:
     bool rightWheel;
 
 public:
+    MotorDriver();
     void initialize();
     void moveForward();
     void stopMoving();

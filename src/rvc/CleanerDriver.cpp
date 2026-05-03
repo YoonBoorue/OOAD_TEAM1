@@ -2,6 +2,8 @@
 
 namespace rvc {
 
+CleanerDriver::CleanerDriver() : mode("off") {}
+
 void CleanerDriver::initialize() {
     // TODO
 }

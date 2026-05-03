@@ -2,6 +2,8 @@
 
 namespace rvc {
 
+MotorDriver::MotorDriver() : leftWheel(false), rightWheel(false) {}
+
 void MotorDriver::initialize() {
     // TODO
 }
@@ -27,7 +29,6 @@ void MotorDriver::moveBackward() {
 }
 
 bool MotorDriver::checkIsForward() {
-    // TODO
     return false;
 }
 

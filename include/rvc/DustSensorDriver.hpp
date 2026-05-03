@@ -7,6 +7,7 @@ private:
     bool dust;
 
 public:
+    DustSensorDriver();
     void initialize();
     void deactivateDustSensor();
 };

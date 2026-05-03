@@ -2,6 +2,9 @@
 
 namespace rvc {
 
+ObstacleSensorDriver::ObstacleSensorDriver() 
+    : direction{false, false, false} {}
+
 void ObstacleSensorDriver::initialize() {
     // TODO
 }

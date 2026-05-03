@@ -2,6 +2,8 @@
 
 namespace rvc {
 
+DustSensorDriver::DustSensorDriver() : dust(false) {}
+
 void DustSensorDriver::initialize() {
     // TODO
 }

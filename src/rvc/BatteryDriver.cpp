@@ -2,6 +2,8 @@
 
 namespace rvc {
 
+BatteryDriver::BatteryDriver() : LV(100), status(false) {}
+
 void BatteryDriver::initialize() {
     // TODO
 }

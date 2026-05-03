@@ -8,6 +8,7 @@ private:
     std::string mode;
 
 public:
+    CleanerDriver();
     void initialize();
     void startCleaning();
     void stopCleaning();
