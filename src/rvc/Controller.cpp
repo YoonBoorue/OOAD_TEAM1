@@ -58,7 +58,7 @@ void Controller::dustDetected() {
     // TODO
 }
 
-void Controller::obstacleDetected(bool direction[3]) {
+void Controller::obstacleDetected(const bool direction[3]) {
     // TODO
 }
 

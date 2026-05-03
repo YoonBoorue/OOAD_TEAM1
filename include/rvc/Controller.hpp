@@ -21,6 +21,9 @@ private:
 public:
     Controller();
     ~Controller();
+    Controller(const Controller&) = delete;
+    Controller& operator=(const Controller&) = delete;
+
     bool startTimer();
     void powerButtonPressed();
     void startButtonPressed();
@@ -29,7 +32,7 @@ public:
     void lowBatteryCleared();
     void stopCharging();
     void dustDetected();
-    void obstacleDetected(bool direction[3]);
+    void obstacleDetected(const bool direction[3]);
 };
 
 }
