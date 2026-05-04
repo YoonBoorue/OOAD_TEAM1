@@ -12,6 +12,12 @@ add_library(ooad_core
     src/rvc/DustProcessor.cpp
     src/rvc/ObstacleProcessor.cpp
     src/rvc/Modes.cpp
+    src/rvc/Controller.cpp
+    src/rvc/BatteryDriver.cpp
+    src/rvc/CleanerDriver.cpp
+    src/rvc/DustSensorDriver.cpp
+    src/rvc/MotorDriver.cpp
+    src/rvc/ObstacleSensorDriver.cpp
 )
 
 target_include_directories(ooad_core
