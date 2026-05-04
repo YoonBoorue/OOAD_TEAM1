@@ -3,7 +3,7 @@
 namespace rvc {
 
 // --- StandbyMode ---
-bool StandbyMode::checkIsMoving() const { return false; }
+void StandbyMode::checkIsMoving() const {}
 OperatingMode& StandbyMode::startButtonPressed() { return *this; }
 OperatingMode& StandbyMode::lowBatteryDetected() { return *this; }
 OperatingMode& StandbyMode::lowBatteryCleared() { return *this; }
@@ -12,7 +12,7 @@ bool StandbyMode::canCharge() const { return true; }
 void StandbyMode::timerExpired() {}
 
 // --- NormalMode ---
-bool NormalMode::checkIsMoving() const { return true; }
+void NormalMode::checkIsMoving() const {}
 OperatingMode& NormalMode::startButtonPressed() { return *this; }
 OperatingMode& NormalMode::lowBatteryDetected() { return *this; }
 OperatingMode& NormalMode::lowBatteryCleared() { return *this; }
@@ -21,7 +21,7 @@ bool NormalMode::canCharge() const { return false; }
 void NormalMode::timerExpired() {}
 
 // --- BoostMode ---
-bool BoostMode::checkIsMoving() const { return true; }
+void BoostMode::checkIsMoving() const {}
 OperatingMode& BoostMode::startButtonPressed() { return *this; }
 OperatingMode& BoostMode::lowBatteryDetected() { return *this; }
 OperatingMode& BoostMode::lowBatteryCleared() { return *this; }
@@ -30,7 +30,7 @@ bool BoostMode::canCharge() const { return false; }
 void BoostMode::timerExpired() {}
 
 // --- LowBatteryMode ---
-bool LowBatteryMode::checkIsMoving() const { return true; }
+void LowBatteryMode::checkIsMoving() const {}
 OperatingMode& LowBatteryMode::startButtonPressed() { return *this; }
 OperatingMode& LowBatteryMode::lowBatteryDetected() { return *this; }
 OperatingMode& LowBatteryMode::lowBatteryCleared() { return *this; }
