@@ -1,15 +1,9 @@
 #pragma once
 #include "rvc/OperatingMode.hpp"
+#include "rvc/Direction.hpp"
 #include <array>
 
 namespace rvc {
-
-// 방향 열거형
-enum class Direction {
-    FRONT,
-    LEFT,
-    RIGHT
-};
 
 // 장애물 감지 및 이동 경로 결정
 class ObstacleProcessor {

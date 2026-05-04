@@ -1,11 +1,7 @@
 #pragma once
+#include "rvc/Direction.hpp"
 
 namespace rvc {
-
-enum class TurnDirection {
-    Left,
-    Right
-};
 
 enum class MotionCommand {
     MoveForward,
@@ -28,12 +24,12 @@ struct ControlCommand {
 
 class RobotController {
 public:
-    explicit RobotController(TurnDirection preferredTurn = TurnDirection::Left);
+    explicit RobotController(Direction preferredTurn = Direction::LEFT);
 
     ControlCommand decide(const SensorSnapshot& sensors) const;
 
 private:
-    TurnDirection preferredTurn_;
+    Direction preferredTurn_;
 };
 
 } // namespace rvc

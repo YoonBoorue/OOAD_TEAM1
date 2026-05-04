@@ -2,7 +2,7 @@
 
 namespace rvc {
 
-MotorDriver::MotorDriver() : leftWheel(false), rightWheel(false) {}
+MotorDriver::MotorDriver() : status(false), moveDirection(Direction::FRONT), forward(false) {}
 
 void MotorDriver::initialize() {
     // TODO
