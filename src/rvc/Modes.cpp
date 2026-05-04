@@ -1,41 +1,107 @@
 #include "rvc/Modes.hpp"
 
-namespace rvc {
+namespace rvc
+{
 
-// --- StandbyMode ---
-bool StandbyMode::checkIsMoving() const { return false; }
-OperatingMode& StandbyMode::startButtonPressed() { return *this; }
-OperatingMode& StandbyMode::lowBatteryDetected() { return *this; }
-OperatingMode& StandbyMode::lowBatteryCleared() { return *this; }
-OperatingMode& StandbyMode::dustDetected() { return *this; }
-bool StandbyMode::canCharge() const { return true; }
-void StandbyMode::timerExpired() {}
+    // --- Mode Singleton Accessors ---
+    OperatingMode &standbyMode()
+    {
+        static StandbyMode mode;
+        return mode;
+    }
 
-// --- NormalMode ---
-bool NormalMode::checkIsMoving() const { return true; }
-OperatingMode& NormalMode::startButtonPressed() { return *this; }
-OperatingMode& NormalMode::lowBatteryDetected() { return *this; }
-OperatingMode& NormalMode::lowBatteryCleared() { return *this; }
-OperatingMode& NormalMode::dustDetected() { return *this; }
-bool NormalMode::canCharge() const { return false; }
-void NormalMode::timerExpired() {}
+    OperatingMode &normalMode()
+    {
+        static NormalMode mode;
+        return mode;
+    }
 
-// --- BoostMode ---
-bool BoostMode::checkIsMoving() const { return true; }
-OperatingMode& BoostMode::startButtonPressed() { return *this; }
-OperatingMode& BoostMode::lowBatteryDetected() { return *this; }
-OperatingMode& BoostMode::lowBatteryCleared() { return *this; }
-OperatingMode& BoostMode::dustDetected() { return *this; }
-bool BoostMode::canCharge() const { return false; }
-void BoostMode::timerExpired() {}
+    OperatingMode &boostMode()
+    {
+        static BoostMode mode;
+        return mode;
+    }
 
-// --- LowBatteryMode ---
-bool LowBatteryMode::checkIsMoving() const { return true; }
-OperatingMode& LowBatteryMode::startButtonPressed() { return *this; }
-OperatingMode& LowBatteryMode::lowBatteryDetected() { return *this; }
-OperatingMode& LowBatteryMode::lowBatteryCleared() { return *this; }
-OperatingMode& LowBatteryMode::dustDetected() { return *this; }
-bool LowBatteryMode::canCharge() const { return false; }
-void LowBatteryMode::timerExpired() {}
+    OperatingMode &lowBatteryMode()
+    {
+        static LowBatteryMode mode;
+        return mode;
+    }
+
+    // --- StandbyMode ---
+    bool StandbyMode::checkIsMoving() const { return false; }
+
+    OperatingMode &StandbyMode::startButtonPressed() { return normalMode(); }
+
+    OperatingMode &StandbyMode::lowBatteryDetected() { return lowBatteryMode(); }
+
+    OperatingMode &StandbyMode::lowBatteryCleared() { return standbyMode(); }
+
+    OperatingMode &StandbyMode::dustDetected() { return standbyMode(); }
+
+    bool StandbyMode::canCharge() const { return true; }
+
+    OperatingMode &StandbyMode::timerExpired() { return standbyMode(); }
+
+    ModeKind StandbyMode::kind() const { return ModeKind::Standby; }
+
+    const char *StandbyMode::name() const { return "StandbyMode"; }
+
+    // --- NormalMode ---
+    bool NormalMode::checkIsMoving() const { return true; }
+
+    OperatingMode &NormalMode::startButtonPressed() { return standbyMode(); }
+
+    OperatingMode &NormalMode::lowBatteryDetected() { return lowBatteryMode(); }
+
+    OperatingMode &NormalMode::lowBatteryCleared() { return normalMode(); }
+
+    OperatingMode &NormalMode::dustDetected() { return boostMode(); }
+
+    bool NormalMode::canCharge() const { return false; }
+
+    OperatingMode &NormalMode::timerExpired() { return normalMode(); }
+
+    ModeKind NormalMode::kind() const { return ModeKind::Normal; }
+
+    const char *NormalMode::name() const { return "NormalMode"; }
+
+    // --- BoostMode ---
+    bool BoostMode::checkIsMoving() const { return true; }
+
+    OperatingMode &BoostMode::startButtonPressed() { return standbyMode(); }
+
+    OperatingMode &BoostMode::lowBatteryDetected() { return lowBatteryMode(); }
+
+    OperatingMode &BoostMode::lowBatteryCleared() { return boostMode(); }
+
+    OperatingMode &BoostMode::dustDetected() { return boostMode(); }
+
+    bool BoostMode::canCharge() const { return false; }
+
+    OperatingMode &BoostMode::timerExpired() { return normalMode(); }
+
+    ModeKind BoostMode::kind() const { return ModeKind::Boost; }
+
+    const char *BoostMode::name() const { return "BoostMode"; }
+
+    // --- LowBatteryMode ---
+    bool LowBatteryMode::checkIsMoving() const { return false; }
+
+    OperatingMode &LowBatteryMode::startButtonPressed() { return lowBatteryMode(); }
+
+    OperatingMode &LowBatteryMode::lowBatteryDetected() { return lowBatteryMode(); }
+
+    OperatingMode &LowBatteryMode::lowBatteryCleared() { return standbyMode(); }
+
+    OperatingMode &LowBatteryMode::dustDetected() { return lowBatteryMode(); }
+
+    bool LowBatteryMode::canCharge() const { return true; }
+
+    OperatingMode &LowBatteryMode::timerExpired() { return lowBatteryMode(); }
+
+    ModeKind LowBatteryMode::kind() const { return ModeKind::LowBattery; }
+
+    const char *LowBatteryMode::name() const { return "LowBatteryMode"; }
 
 } // namespace rvc
