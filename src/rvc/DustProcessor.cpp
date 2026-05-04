@@ -1,9 +1,11 @@
 #include "rvc/DustProcessor.hpp"
 
-namespace rvc {
+namespace rvc
+{
 
-bool DustProcessor::decideIsDusted(const OperatingMode& /*currentMode*/) {
-    return false;
-}
+    bool DustProcessor::decideIsDusted(const OperatingMode & /*currentMode*/, CleanerDriver &cleaner)
+    {
+        return false;
+    }
 
 } // namespace rvc
