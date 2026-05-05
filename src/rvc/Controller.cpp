@@ -3,21 +3,34 @@
 #include "rvc/BatteryDriver.hpp"
 #include "rvc/CleanerDriver.hpp"
 #include "rvc/DustSensorDriver.hpp"
+<<<<<<< feat/power-usecases(1-10-11-16)
 #include "rvc/Modes.hpp"
 #include "rvc/MotorDriver.hpp"
 #include "rvc/ObstacleSensorDriver.hpp"
+=======
+#include "rvc/DustProcessor.hpp"
+#include "rvc/MotorDriver.hpp"
+#include "rvc/ObstacleProcessor.hpp"
+>>>>>>> main
 
 namespace rvc
 {
 
     Controller::Controller()
+<<<<<<< feat/power-usecases(1-10-11-16)
         : power(false), isNowCharging(false), lowBatteryClearedEventSent(true), currentMode(nullptr), batteryDriver(new BatteryDriver()), cleanerDriver(new CleanerDriver()), dustSensorDriver(new DustSensorDriver()), motorDriver(new MotorDriver()), obstacleSensorDriver(new ObstacleSensorDriver()) {}
+=======
+        : power(false), isNowCharging(false), currentMode(nullptr), batteryDriver(new BatteryDriver()), cleanerDriver(new CleanerDriver()), motorDriver(new MotorDriver()), dustSensorDriver(new DustSensorDriver()), dustProcessor(new DustProcessor()), obstacleProcessor(new ObstacleProcessor())
+    {
+    }
+>>>>>>> main
 
     Controller::~Controller()
     {
         delete batteryDriver;
         delete cleanerDriver;
         delete dustSensorDriver;
+<<<<<<< feat/power-usecases(1-10-11-16)
         delete motorDriver;
         delete obstacleSensorDriver;
 
@@ -57,16 +70,24 @@ namespace rvc
         {
             lowBatteryCleared();
         }
+=======
+        delete dustProcessor;
+        delete currentMode;
+>>>>>>> main
     }
 
     bool Controller::startTimer()
     {
+<<<<<<< feat/power-usecases(1-10-11-16)
         // UC6 Adjust Boost Mode is intentionally left for the separate boost branch.
+=======
+>>>>>>> main
         return false;
     }
 
     void Controller::powerButtonPressed()
     {
+<<<<<<< feat/power-usecases(1-10-11-16)
         if (!power)
         {
             // SD-01 TURN ON SYSTEM
@@ -100,20 +121,28 @@ namespace rvc
         currentMode = nullptr;
         lowBatteryClearedEventSent = true;
         isNowCharging = batteryDriver->isCharging();
+=======
+        // TODO
+>>>>>>> main
     }
 
     void Controller::startButtonPressed()
     {
+<<<<<<< feat/power-usecases(1-10-11-16)
         if (!power || currentMode == nullptr || isNowCharging)
         {
             return;
         }
 
         enterMode(currentMode->startButtonPressed());
+=======
+        // TODO
+>>>>>>> main
     }
 
     void Controller::chargeBattery()
     {
+<<<<<<< feat/power-usecases(1-10-11-16)
         // SD-10 CHARGE BATTERY
         if (!canStartCharging())
         {
@@ -136,10 +165,14 @@ namespace rvc
         }
 
         performChargingStep();
+=======
+        // TODO
+>>>>>>> main
     }
 
     void Controller::lowBatteryDetected()
     {
+<<<<<<< feat/power-usecases(1-10-11-16)
         // SD-15 ENTER LOW BATTERY MODE
         if (!power || currentMode == nullptr)
         {
@@ -148,10 +181,14 @@ namespace rvc
 
         lowBatteryClearedEventSent = false;
         enterMode(currentMode->lowBatteryDetected());
+=======
+        // TODO
+>>>>>>> main
     }
 
     void Controller::lowBatteryCleared()
     {
+<<<<<<< feat/power-usecases(1-10-11-16)
         if (!power || currentMode == nullptr)
         {
             lowBatteryClearedEventSent = true;
@@ -160,17 +197,25 @@ namespace rvc
 
         lowBatteryClearedEventSent = true;
         enterMode(currentMode->lowBatteryCleared());
+=======
+        // TODO
+>>>>>>> main
     }
 
     void Controller::stopCharging()
     {
+<<<<<<< feat/power-usecases(1-10-11-16)
         // SD-16 STOP CHARGING
         batteryDriver->stopCharging();
         isNowCharging = false;
+=======
+        // TODO
+>>>>>>> main
     }
 
     void Controller::dustDetected()
     {
+<<<<<<< feat/power-usecases(1-10-11-16)
         // UC6 Adjust Boost Mode is intentionally left for the separate boost branch.
     }
 
@@ -222,3 +267,15 @@ namespace rvc
     }
 
 } // namespace rvc
+=======
+        // TODO
+    }
+
+    void Controller::obstacleDetected(const std::array<bool, 3> &dir)
+    {
+        bool fw = this->motorDriver->checkIsForward();
+        obstacleProcessor->decideDirection(dir, *currentMode, *motorDriver);
+    }
+
+}
+>>>>>>> main

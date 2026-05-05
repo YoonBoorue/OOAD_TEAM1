@@ -1,11 +1,13 @@
 #pragma once
+#include "rvc/Direction.hpp"
 
 namespace rvc {
 
 class MotorDriver {
 private:
-    bool leftWheel;
-    bool rightWheel;
+    bool status;
+    Direction moveDirection;
+    bool forward;
 
 public:
     MotorDriver();

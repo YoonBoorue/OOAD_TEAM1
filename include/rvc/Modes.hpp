@@ -1,5 +1,8 @@
 #pragma once
 #include "rvc/OperatingMode.hpp"
+#include "rvc/Direction.hpp"
+#include "rvc/MotorDriver.hpp"
+#include "rvc/CleanerDriver.hpp"
 
 namespace rvc
 {

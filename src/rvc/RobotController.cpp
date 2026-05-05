@@ -2,7 +2,7 @@
 
 namespace rvc {
 
-RobotController::RobotController(TurnDirection preferredTurn)
+RobotController::RobotController(Direction preferredTurn)
     : preferredTurn_(preferredTurn) {}
 
 ControlCommand RobotController::decide(const SensorSnapshot& sensors) const {
@@ -14,7 +14,7 @@ ControlCommand RobotController::decide(const SensorSnapshot& sensors) const {
         return command;
     }
 
-    if (preferredTurn_ == TurnDirection::Left) {
+    if (preferredTurn_ == Direction::LEFT) {
         if (!sensors.leftObstacle) {
             command.motion = MotionCommand::TurnLeft;
         } else if (!sensors.rightObstacle) {

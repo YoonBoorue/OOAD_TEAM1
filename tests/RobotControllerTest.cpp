@@ -4,7 +4,8 @@
 
 using namespace rvc;
 
-TEST(RobotControllerTest, MovesForwardWhenNoObstacleExists) {
+TEST(RobotControllerTest, MovesForwardWhenNoObstacleExists)
+{
     RobotController controller;
 
     SensorSnapshot sensors{};
@@ -19,8 +20,9 @@ TEST(RobotControllerTest, MovesForwardWhenNoObstacleExists) {
     EXPECT_FALSE(command.cleaningPowerUp);
 }
 
-TEST(RobotControllerTest, TurnsLeftWhenFrontObstacleExistsAndLeftSideIsOpen) {
-    RobotController controller(TurnDirection::Left);
+TEST(RobotControllerTest, TurnsLeftWhenFrontObstacleExistsAndLeftSideIsOpen)
+{
+    RobotController controller(Direction::LEFT);
 
     SensorSnapshot sensors{};
     sensors.frontObstacle = true;
@@ -33,8 +35,9 @@ TEST(RobotControllerTest, TurnsLeftWhenFrontObstacleExistsAndLeftSideIsOpen) {
     EXPECT_EQ(command.motion, MotionCommand::TurnLeft);
 }
 
-TEST(RobotControllerTest, TurnsRightWhenFrontAndLeftAreBlocked) {
-    RobotController controller(TurnDirection::Left);
+TEST(RobotControllerTest, TurnsRightWhenFrontAndLeftAreBlocked)
+{
+    RobotController controller(Direction::LEFT);
 
     SensorSnapshot sensors{};
     sensors.frontObstacle = true;
@@ -47,7 +50,8 @@ TEST(RobotControllerTest, TurnsRightWhenFrontAndLeftAreBlocked) {
     EXPECT_EQ(command.motion, MotionCommand::TurnRight);
 }
 
-TEST(RobotControllerTest, MovesBackwardWhenFrontLeftRightAreBlocked) {
+TEST(RobotControllerTest, MovesBackwardWhenFrontLeftRightAreBlocked)
+{
     RobotController controller;
 
     SensorSnapshot sensors{};
@@ -61,7 +65,8 @@ TEST(RobotControllerTest, MovesBackwardWhenFrontLeftRightAreBlocked) {
     EXPECT_EQ(command.motion, MotionCommand::MoveBackward);
 }
 
-TEST(RobotControllerTest, PowersUpCleaningWhenDustIsDetected) {
+TEST(RobotControllerTest, PowersUpCleaningWhenDustIsDetected)
+{
     RobotController controller;
 
     SensorSnapshot sensors{};
