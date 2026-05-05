@@ -13,7 +13,7 @@ void CleanerDriver::startCleaning() {
 }
 
 void CleanerDriver::stopCleaning() {
-    // TODO
+    mode = "off";
 }
 
 void CleanerDriver::decideSetting(bool boost) {

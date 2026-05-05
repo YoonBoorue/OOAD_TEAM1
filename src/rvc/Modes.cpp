@@ -35,7 +35,12 @@ namespace rvc
             motor.moveBackward();
         }
     }
-    OperatingMode &NormalMode::startButtonPressed(MotorDriver & /*motor*/, CleanerDriver & /*cleaner*/) { return *this; }
+    OperatingMode &NormalMode::startButtonPressed(MotorDriver &motor, CleanerDriver &cleaner)
+    {
+        motor.stopMoving();
+        cleaner.stopCleaning();
+        return *(new StandbyMode());
+    }
     OperatingMode &NormalMode::lowBatteryDetected(MotorDriver & /*motor*/, CleanerDriver & /*cleaner*/) { return *this; }
     OperatingMode &NormalMode::lowBatteryCleared() { return *this; }
     OperatingMode &NormalMode::dustDetected(CleanerDriver & /*cleaner*/) { return *this; }
@@ -60,7 +65,12 @@ namespace rvc
             motor.moveBackward();
         }
     }
-    OperatingMode &BoostMode::startButtonPressed(MotorDriver & /*motor*/, CleanerDriver & /*cleaner*/) { return *this; }
+    OperatingMode &BoostMode::startButtonPressed(MotorDriver &motor, CleanerDriver &cleaner)
+    {
+        motor.stopMoving();
+        cleaner.stopCleaning();
+        return *(new StandbyMode());
+    }
     OperatingMode &BoostMode::lowBatteryDetected(MotorDriver & /*motor*/, CleanerDriver & /*cleaner*/) { return *this; }
     OperatingMode &BoostMode::lowBatteryCleared() { return *this; }
     OperatingMode &BoostMode::dustDetected(CleanerDriver & /*cleaner*/) { return *this; }

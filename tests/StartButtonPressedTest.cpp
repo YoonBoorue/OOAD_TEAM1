@@ -1,9 +1,10 @@
 #include <gtest/gtest.h>
 
-// SD-02의 system operation인 Controller::startButtonPressed() 검증
+// SD-02, SD-07의 system operation인 Controller::startButtonPressed() 검증
 
-// TC-01~TC-06: 실제 StandbyMode, MotorDriver, CleanerDriver 구현으로 SD 내부 동작 확인
-// TC-07~TC-15: 실제 구현만으로 관찰하기 어려운 위임 횟수, 전달 인자, 반환 모드 갱신만 Stub 사용
+// TC-01~TC-06: 실제 StandbyMode, MotorDriver, CleanerDriver 구현으로 SD-02 내부 동작 확인
+// TC-07~TC-12: 실제 NormalMode/BoostMode 구현으로 SD-07 내부 동작 확인
+// TC-13~TC-21: 실제 구현만으로 관찰하기 어려운 위임 횟수, 전달 인자, 반환 모드 갱신만 Stub 사용
 
 // 현재 Controller 생성자는 currentMode 초기화가 없어서 테스트에서만 내부 상태 세팅
 #define private public
@@ -34,7 +35,7 @@ public:
     CleanerDriver *receivedCleaner = nullptr; // stub 기록값: Controller가 전달한 CleanerDriver 주소
     OperatingMode *nextMode = nullptr; // stub 설정값: currentMode 갱신 결과 제어
 
-    void checkIsMoving(Direction, MotorDriver &) const override {} // stub: SD-02 테스트 범위 밖
+    void checkIsMoving(Direction, MotorDriver &) const override {} // stub: SD-02/SD-07 테스트 범위 밖
 
     OperatingMode &startButtonPressed(MotorDriver &motor, CleanerDriver &cleaner) override
     {
@@ -184,10 +185,104 @@ TEST_F(ControllerStartButtonPressedTest, ChargingKeepsCurrentModeInRealStandbyMo
     EXPECT_EQ(controller.currentMode, mode);
 }
 
-TEST_F(ControllerStartButtonPressedTest, DelegatesToCurrentModeOnceWhenNotCharging)
+TEST_F(ControllerStartButtonPressedTest, NormalModeStopsMotorWhenStartButtonPressed)
 {
     // TC-07
-    // 목적: Controller가 SD-02의 2번 메시지를 정확히 1회 호출하는지 확인
+    // 목적: SD-07 내부 ref UC8 Stop Moving이 실제 NormalMode에서 수행되는지 확인
+    // 상황: currentMode는 실제 NormalMode, MotorDriver는 전진 중, 로봇은 충전 중 아님
+    // 실행: Driver가 Start Button 입력 전달
+    // 기대값: MotorDriver status false
+    setRealMode(new NormalMode());
+    controller.motorDriver->moveForward();
+    setCharging(false);
+
+    driver.pressStartButton();
+
+    EXPECT_FALSE(controller.motorDriver->status);
+}
+
+TEST_F(ControllerStartButtonPressedTest, NormalModeStopsCleanerWhenStartButtonPressed)
+{
+    // TC-08
+    // 목적: SD-07 내부 ref UC9 Stop Cleaning이 실제 NormalMode에서 수행되는지 확인
+    // 상황: currentMode는 실제 NormalMode, CleanerDriver는 normal 청소 중, 로봇은 충전 중 아님
+    // 실행: Driver가 Start Button 입력 전달
+    // 기대값: CleanerDriver mode는 off
+    setRealMode(new NormalMode());
+    controller.cleanerDriver->startCleaning();
+    setCharging(false);
+
+    driver.pressStartButton();
+
+    EXPECT_EQ(controller.cleanerDriver->mode, "off");
+}
+
+TEST_F(ControllerStartButtonPressedTest, NormalModeChangesToStandbyModeWhenStartButtonPressed)
+{
+    // TC-09
+    // 목적: SD-07의 Set Stand-by Mode 결과로 currentMode가 StandbyMode인지 확인
+    // 상황: currentMode는 실제 NormalMode, 로봇은 충전 중 아님
+    // 실행: Driver가 Start Button 입력 전달
+    // 기대값: controller.currentMode는 StandbyMode 타입
+    setRealMode(new NormalMode());
+    setCharging(false);
+
+    driver.pressStartButton();
+
+    EXPECT_NE(dynamic_cast<StandbyMode *>(controller.currentMode), nullptr);
+}
+
+TEST_F(ControllerStartButtonPressedTest, BoostModeStopsMotorWhenStartButtonPressed)
+{
+    // TC-10
+    // 목적: SD-07 내부 ref UC8 Stop Moving이 실제 BoostMode에서 수행되는지 확인
+    // 상황: currentMode는 실제 BoostMode, MotorDriver는 전진 중, 로봇은 충전 중 아님
+    // 실행: Driver가 Start Button 입력 전달
+    // 기대값: MotorDriver status false
+    setRealMode(new BoostMode());
+    controller.motorDriver->moveForward();
+    setCharging(false);
+
+    driver.pressStartButton();
+
+    EXPECT_FALSE(controller.motorDriver->status);
+}
+
+TEST_F(ControllerStartButtonPressedTest, BoostModeStopsCleanerWhenStartButtonPressed)
+{
+    // TC-11
+    // 목적: SD-07 내부 ref UC9 Stop Cleaning이 실제 BoostMode에서 수행되는지 확인
+    // 상황: currentMode는 실제 BoostMode, CleanerDriver는 normal 청소 중, 로봇은 충전 중 아님
+    // 실행: Driver가 Start Button 입력 전달
+    // 기대값: CleanerDriver mode는 off
+    setRealMode(new BoostMode());
+    controller.cleanerDriver->startCleaning();
+    setCharging(false);
+
+    driver.pressStartButton();
+
+    EXPECT_EQ(controller.cleanerDriver->mode, "off");
+}
+
+TEST_F(ControllerStartButtonPressedTest, BoostModeChangesToStandbyModeWhenStartButtonPressed)
+{
+    // TC-12
+    // 목적: SD-07의 Set Stand-by Mode 결과로 currentMode가 StandbyMode인지 확인
+    // 상황: currentMode는 실제 BoostMode, 로봇은 충전 중 아님
+    // 실행: Driver가 Start Button 입력 전달
+    // 기대값: controller.currentMode는 StandbyMode 타입
+    setRealMode(new BoostMode());
+    setCharging(false);
+
+    driver.pressStartButton();
+
+    EXPECT_NE(dynamic_cast<StandbyMode *>(controller.currentMode), nullptr);
+}
+
+TEST_F(ControllerStartButtonPressedTest, DelegatesToCurrentModeOnceWhenNotCharging)
+{
+    // TC-13
+    // 목적: Controller가 SD-02/SD-07의 2번 메시지를 정확히 1회 호출하는지 확인
     // 상황: 호출 횟수는 실제 모드에서 관찰하기 어려워 stub mode 사용, 로봇은 충전 중 아님
     // 실행: Driver가 Start Button 입력 1회 전달
     // 기대값: stub mode의 startButtonPressed 호출 1회
@@ -201,8 +296,8 @@ TEST_F(ControllerStartButtonPressedTest, DelegatesToCurrentModeOnceWhenNotChargi
 
 TEST_F(ControllerStartButtonPressedTest, DoesNotDelegateToCurrentModeWhenCharging)
 {
-    // TC-08
-    // 목적: 충전 중이면 SD-02의 2번 메시지 호출 자체가 없는지 확인
+    // TC-14
+    // 목적: 충전 중이면 Controller의 startButtonPressed 위임 호출 자체가 없는지 확인
     // 상황: 호출 여부는 실제 모드에서 직접 관찰하기 어려워 stub mode 사용, 로봇은 충전 중
     // 실행: Driver가 Start Button 입력 전달
     // 기대값: stub mode의 startButtonPressed 호출 0회
@@ -216,8 +311,8 @@ TEST_F(ControllerStartButtonPressedTest, DoesNotDelegateToCurrentModeWhenChargin
 
 TEST_F(ControllerStartButtonPressedTest, PassesControllerMotorDriverToCurrentMode)
 {
-    // TC-09
-    // 목적: SD-02의 2번 메시지 인자 motor가 Controller의 MotorDriver인지 확인
+    // TC-15
+    // 목적: SD-02/SD-07의 2번 메시지 인자 motor가 Controller의 MotorDriver인지 확인
     // 상황: 전달 인자 주소는 실제 StandbyMode에서 관찰하기 어려워 stub mode 사용
     // 실행: Driver가 Start Button 입력 전달
     // 기대값: stub이 받은 motor 주소와 controller.motorDriver 주소 일치
@@ -231,8 +326,8 @@ TEST_F(ControllerStartButtonPressedTest, PassesControllerMotorDriverToCurrentMod
 
 TEST_F(ControllerStartButtonPressedTest, PassesControllerCleanerDriverToCurrentMode)
 {
-    // TC-10
-    // 목적: SD-02의 2번 메시지 인자 cleaner가 Controller의 CleanerDriver인지 확인
+    // TC-16
+    // 목적: SD-02/SD-07의 2번 메시지 인자 cleaner가 Controller의 CleanerDriver인지 확인
     // 상황: 전달 인자 주소는 실제 StandbyMode에서 관찰하기 어려워 stub mode 사용
     // 실행: Driver가 Start Button 입력 전달
     // 기대값: stub이 받은 cleaner 주소와 controller.cleanerDriver 주소 일치
@@ -246,8 +341,8 @@ TEST_F(ControllerStartButtonPressedTest, PassesControllerCleanerDriverToCurrentM
 
 TEST_F(ControllerStartButtonPressedTest, ChangesCurrentModeToReturnedMode)
 {
-    // TC-11
-    // 목적: SD-02의 currentMode = startButtonPressed(...) 대입 동작 확인
+    // TC-17
+    // 목적: SD-02/SD-07의 currentMode = startButtonPressed(...) 대입 동작 확인
     // 상황: 반환 모드를 임의로 제어해야 해서 stub mode 사용
     // 실행: firstMode가 secondMode를 반환하도록 설정 후 Start Button 입력
     // 기대값: controller.currentMode는 secondMode
@@ -263,7 +358,7 @@ TEST_F(ControllerStartButtonPressedTest, ChangesCurrentModeToReturnedMode)
 
 TEST_F(ControllerStartButtonPressedTest, KeepsCurrentModeWhenReturnedModeIsSameStub)
 {
-    // TC-12
+    // TC-18
     // 목적: 반환 모드가 자기 자신일 때 currentMode 유지 확인
     // 상황: 반환값 제어가 필요해서 stub mode 사용
     // 실행: stub mode가 자기 자신을 반환하도록 설정 후 Start Button 입력
@@ -278,7 +373,7 @@ TEST_F(ControllerStartButtonPressedTest, KeepsCurrentModeWhenReturnedModeIsSameS
 
 TEST_F(ControllerStartButtonPressedTest, SecondPressUsesReturnedCurrentMode)
 {
-    // TC-13
+    // TC-19
     // 목적: 첫 입력에서 바뀐 currentMode가 다음 입력에 사용되는지 확인
     // 상황: 모드 전환과 호출 횟수 관찰이 필요해서 stub mode 사용
     // 실행: firstMode가 secondMode를 반환하도록 설정 후 Start Button 입력 2회
@@ -298,8 +393,8 @@ TEST_F(ControllerStartButtonPressedTest, SecondPressUsesReturnedCurrentMode)
 
 TEST_F(ControllerStartButtonPressedTest, CallsModeOncePerButtonPressWhenNotCharging)
 {
-    // TC-14
-    // 목적: 반복 입력 시 SD-02의 2번 메시지가 입력 횟수만큼 호출되는지 확인
+    // TC-20
+    // 목적: 반복 입력 시 SD-02/SD-07의 2번 메시지가 입력 횟수만큼 호출되는지 확인
     // 상황: 호출 횟수 관찰이 필요해서 stub mode 사용, 로봇은 충전 중 아님
     // 실행: Driver가 Start Button 입력 2회 전달
     // 기대값: stub mode의 startButtonPressed 호출 총 2회
@@ -314,7 +409,7 @@ TEST_F(ControllerStartButtonPressedTest, CallsModeOncePerButtonPressWhenNotCharg
 
 TEST_F(ControllerStartButtonPressedTest, ChargingStateCanBlockAfterSuccessfulPress)
 {
-    // TC-15
+    // TC-21
     // 목적: 실행 중 충전 상태로 바뀐 뒤 다음 Start Button 입력 차단 확인
     // 상황: 호출 횟수 관찰이 필요해서 stub mode 사용, 첫 입력 후 충전 상태로 변경
     // 실행: Start Button 입력 1회 성공 후 다시 입력
