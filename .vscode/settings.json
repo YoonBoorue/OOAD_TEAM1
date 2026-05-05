@@ -7,12 +7,10 @@
   // 빌드 결과물이 저장될 폴더 위치를 지정합니다.
   "cmake.buildDirectory": "${workspaceFolder}/build",
   "cmake.generator": "Ninja",
-
   // [정적 분석] Clang-Tidy를 활성화하여 실시간으로 코드 품질을 검사합니다.
   "C_Cpp.codeAnalysis.clangTidy.enabled": true,
   "C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json",
   "C_Cpp.default.cppStandard": "c++17",
-
   // [포맷팅] 파일 저장 시 코드를 자동으로 정렬합니다.
   "editor.formatOnSave": true
 }
