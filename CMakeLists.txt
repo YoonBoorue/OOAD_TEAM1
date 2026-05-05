@@ -72,6 +72,7 @@ if (BUILD_TESTING)
 
     add_executable(ooad_tests
         tests/RobotControllerTest.cpp
+        tests/StartButtonPressedTest.cpp
     )
 
     target_link_libraries(ooad_tests

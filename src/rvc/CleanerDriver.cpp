@@ -9,7 +9,7 @@ void CleanerDriver::initialize() {
 }
 
 void CleanerDriver::startCleaning() {
-    // TODO
+    mode = "normal";
 }
 
 void CleanerDriver::stopCleaning() {

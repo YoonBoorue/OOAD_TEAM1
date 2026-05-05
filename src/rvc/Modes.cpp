@@ -5,7 +5,12 @@ namespace rvc
 
     // --- StandbyMode ---
     void StandbyMode::checkIsMoving(Direction /*direction*/, MotorDriver & /*motor*/) const {}
-    OperatingMode &StandbyMode::startButtonPressed(MotorDriver & /*motor*/, CleanerDriver & /*cleaner*/) { return *this; }
+    OperatingMode &StandbyMode::startButtonPressed(MotorDriver &motor, CleanerDriver &cleaner)
+    {
+        motor.moveForward();
+        cleaner.startCleaning();
+        return *this;
+    }
     OperatingMode &StandbyMode::lowBatteryDetected(MotorDriver & /*motor*/, CleanerDriver & /*cleaner*/) { return *this; }
     OperatingMode &StandbyMode::lowBatteryCleared() { return *this; }
     OperatingMode &StandbyMode::dustDetected(CleanerDriver & /*cleaner*/) { return *this; }
