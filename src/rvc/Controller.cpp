@@ -67,7 +67,6 @@ namespace rvc
 
     void Controller::obstacleDetected(const std::array<bool, 3> &dir)
     {
-        bool fw = this->motorDriver->checkIsForward();
         obstacleProcessor->decideDirection(dir, *currentMode, *motorDriver);
     }
 

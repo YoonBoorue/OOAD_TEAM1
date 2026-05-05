@@ -4,13 +4,13 @@ namespace rvc
 {
 
     // --- StandbyMode ---
-    void StandbyMode::checkIsMoving(Direction direction, MotorDriver &motor) const {}
-    OperatingMode &StandbyMode::startButtonPressed(MotorDriver &motor, CleanerDriver &cleaner) { return *this; }
-    OperatingMode &StandbyMode::lowBatteryDetected(MotorDriver &motor, CleanerDriver &cleaner) { return *this; }
+    void StandbyMode::checkIsMoving(Direction /*direction*/, MotorDriver & /*motor*/) const {}
+    OperatingMode &StandbyMode::startButtonPressed(MotorDriver & /*motor*/, CleanerDriver & /*cleaner*/) { return *this; }
+    OperatingMode &StandbyMode::lowBatteryDetected(MotorDriver & /*motor*/, CleanerDriver & /*cleaner*/) { return *this; }
     OperatingMode &StandbyMode::lowBatteryCleared() { return *this; }
-    OperatingMode &StandbyMode::dustDetected(CleanerDriver &cleaner) { return *this; }
+    OperatingMode &StandbyMode::dustDetected(CleanerDriver & /*cleaner*/) { return *this; }
     bool StandbyMode::canCharge() const { return true; }
-    OperatingMode &StandbyMode::timerExpired(CleanerDriver &cleaner) {}
+    OperatingMode &StandbyMode::timerExpired(CleanerDriver & /*cleaner*/) { return *this; }
 
     // --- NormalMode ---
     void NormalMode::checkIsMoving(Direction direction, MotorDriver &motor) const
@@ -30,12 +30,12 @@ namespace rvc
             motor.moveBackward();
         }
     }
-    OperatingMode &NormalMode::startButtonPressed(MotorDriver &motor, CleanerDriver &cleaner) { return *this; }
-    OperatingMode &NormalMode::lowBatteryDetected(MotorDriver &motor, CleanerDriver &cleaner) { return *this; }
+    OperatingMode &NormalMode::startButtonPressed(MotorDriver & /*motor*/, CleanerDriver & /*cleaner*/) { return *this; }
+    OperatingMode &NormalMode::lowBatteryDetected(MotorDriver & /*motor*/, CleanerDriver & /*cleaner*/) { return *this; }
     OperatingMode &NormalMode::lowBatteryCleared() { return *this; }
-    OperatingMode &NormalMode::dustDetected(CleanerDriver &cleaner) { return *this; }
+    OperatingMode &NormalMode::dustDetected(CleanerDriver & /*cleaner*/) { return *this; }
     bool NormalMode::canCharge() const { return false; }
-    OperatingMode &NormalMode::timerExpired(CleanerDriver &cleaner) {}
+    OperatingMode &NormalMode::timerExpired(CleanerDriver & /*cleaner*/) { return *this; }
 
     // --- BoostMode ---
     void BoostMode::checkIsMoving(Direction direction, MotorDriver &motor) const
@@ -55,20 +55,20 @@ namespace rvc
             motor.moveBackward();
         }
     }
-    OperatingMode &BoostMode::startButtonPressed(MotorDriver &motor, CleanerDriver &cleaner) { return *this; }
-    OperatingMode &BoostMode::lowBatteryDetected(MotorDriver &motor, CleanerDriver &cleaner) { return *this; }
+    OperatingMode &BoostMode::startButtonPressed(MotorDriver & /*motor*/, CleanerDriver & /*cleaner*/) { return *this; }
+    OperatingMode &BoostMode::lowBatteryDetected(MotorDriver & /*motor*/, CleanerDriver & /*cleaner*/) { return *this; }
     OperatingMode &BoostMode::lowBatteryCleared() { return *this; }
-    OperatingMode &BoostMode::dustDetected(CleanerDriver &cleaner) { return *this; }
+    OperatingMode &BoostMode::dustDetected(CleanerDriver & /*cleaner*/) { return *this; }
     bool BoostMode::canCharge() const { return false; }
-    OperatingMode &BoostMode::timerExpired(CleanerDriver &cleaner) {}
+    OperatingMode &BoostMode::timerExpired(CleanerDriver & /*cleaner*/) { return *this; }
 
     // --- LowBatteryMode ---
-    void LowBatteryMode::checkIsMoving(Direction direction, MotorDriver &motor) const {}
-    OperatingMode &LowBatteryMode::startButtonPressed(MotorDriver &motor, CleanerDriver &cleaner) { return *this; }
-    OperatingMode &LowBatteryMode::lowBatteryDetected(MotorDriver &motor, CleanerDriver &cleaner) { return *this; }
+    void LowBatteryMode::checkIsMoving(Direction /*direction*/, MotorDriver & /*motor*/) const {}
+    OperatingMode &LowBatteryMode::startButtonPressed(MotorDriver & /*motor*/, CleanerDriver & /*cleaner*/) { return *this; }
+    OperatingMode &LowBatteryMode::lowBatteryDetected(MotorDriver & /*motor*/, CleanerDriver & /*cleaner*/) { return *this; }
     OperatingMode &LowBatteryMode::lowBatteryCleared() { return *this; }
-    OperatingMode &LowBatteryMode::dustDetected(CleanerDriver &cleaner) { return *this; }
+    OperatingMode &LowBatteryMode::dustDetected(CleanerDriver & /*cleaner*/) { return *this; }
     bool LowBatteryMode::canCharge() const { return false; }
-    OperatingMode &LowBatteryMode::timerExpired(CleanerDriver &cleaner) {}
+    OperatingMode &LowBatteryMode::timerExpired(CleanerDriver & /*cleaner*/) { return *this; }
 
 } // namespace rvc
