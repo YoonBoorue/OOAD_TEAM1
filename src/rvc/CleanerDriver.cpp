@@ -17,7 +17,7 @@ void CleanerDriver::stopCleaning() {
 }
 
 void CleanerDriver::decideSetting(bool boost) {
-    // TODO
+    mode = boost ? "boost" : "normal";
 }
 
 }

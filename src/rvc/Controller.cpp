@@ -62,7 +62,13 @@ namespace rvc
 
     void Controller::dustDetected()
     {
-        // TODO
+        if (currentMode == nullptr) return;
+
+        bool shouldBoost = dustProcessor->decideIsDusted(*currentMode, *cleanerDriver);
+        if (shouldBoost) {
+            currentMode = &currentMode->dustDetected(*cleanerDriver);
+            startTimer();
+        }
     }
 
     void Controller::obstacleDetected(const std::array<bool, 3> &dir)

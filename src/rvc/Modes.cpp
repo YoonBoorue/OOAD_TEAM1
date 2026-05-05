@@ -8,9 +8,20 @@ namespace rvc
     OperatingMode &StandbyMode::startButtonPressed(MotorDriver &motor, CleanerDriver &cleaner) { return *this; }
     OperatingMode &StandbyMode::lowBatteryDetected(MotorDriver &motor, CleanerDriver &cleaner) { return *this; }
     OperatingMode &StandbyMode::lowBatteryCleared() { return *this; }
-    OperatingMode &StandbyMode::dustDetected(CleanerDriver &cleaner) { return *this; }
+
+    OperatingMode &NormalMode::dustDetected(CleanerDriver &cleaner) 
+    {
+        static BoostMode boost;
+        return boost;
+    }
     bool StandbyMode::canCharge() const { return true; }
-    OperatingMode &StandbyMode::timerExpired(CleanerDriver &cleaner) {}
+    
+    OperatingMode &StandbyMode::timerExpired(CleanerDriver &cleaner) 
+    {
+        cleaner.decideSetting(false);
+        static NormalMode normal;
+        return normal;
+    }
 
     // --- NormalMode ---
     void NormalMode::checkIsMoving(Direction direction, MotorDriver &motor) const
