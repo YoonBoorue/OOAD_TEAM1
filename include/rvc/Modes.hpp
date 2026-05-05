@@ -4,6 +4,11 @@
 namespace rvc
 {
 
+    OperatingMode &standbyMode();
+    OperatingMode &normalMode();
+    OperatingMode &boostMode();
+    OperatingMode &lowBatteryMode();
+
     class StandbyMode : public OperatingMode
     {
     public:
@@ -14,6 +19,7 @@ namespace rvc
         OperatingMode &dustDetected() override;
         bool canCharge() const override;
         OperatingMode &timerExpired() override;
+        void apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) const override;
         ModeKind kind() const override;
         const char *name() const override;
     };
@@ -28,6 +34,7 @@ namespace rvc
         OperatingMode &dustDetected() override;
         bool canCharge() const override;
         OperatingMode &timerExpired() override;
+        void apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) const override;
         ModeKind kind() const override;
         const char *name() const override;
     };
@@ -42,6 +49,7 @@ namespace rvc
         OperatingMode &dustDetected() override;
         bool canCharge() const override;
         OperatingMode &timerExpired() override;
+        void apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) const override;
         ModeKind kind() const override;
         const char *name() const override;
     };
@@ -56,13 +64,9 @@ namespace rvc
         OperatingMode &dustDetected() override;
         bool canCharge() const override;
         OperatingMode &timerExpired() override;
+        void apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) const override;
         ModeKind kind() const override;
         const char *name() const override;
     };
-
-    OperatingMode &standbyMode();
-    OperatingMode &normalMode();
-    OperatingMode &boostMode();
-    OperatingMode &lowBatteryMode();
 
 } // namespace rvc

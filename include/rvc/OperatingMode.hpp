@@ -2,6 +2,8 @@
 
 namespace rvc
 {
+    class CleanerDriver;
+    class MotorDriver;
 
     enum class ModeKind
     {
@@ -24,6 +26,10 @@ namespace rvc
         virtual OperatingMode &dustDetected() = 0;
         virtual bool canCharge() const = 0;
         virtual OperatingMode &timerExpired() = 0;
+
+        // Cleaner/Motor side effects are owned by each mode.
+        // Controller calls this method, but does not decide which driver method to call.
+        virtual void apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) const = 0;
 
         virtual ModeKind kind() const = 0;
         virtual const char *name() const = 0;
