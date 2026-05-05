@@ -7,12 +7,16 @@
 #include "rvc/DustProcessor.hpp"
 #include "rvc/MotorDriver.hpp"
 #include "rvc/ObstacleProcessor.hpp"
+#include "rvc/ObstacleSensorDriver.hpp"
 
 namespace rvc
 {
 
     Controller::Controller()
-        : power(false), isNowCharging(false), currentMode(nullptr), batteryDriver(new BatteryDriver()), cleanerDriver(new CleanerDriver()), motorDriver(new MotorDriver()), dustSensorDriver(new DustSensorDriver()), dustProcessor(new DustProcessor()), obstacleProcessor(new ObstacleProcessor())
+        : power(false), isNowCharging(false), currentMode(nullptr),
+          batteryDriver(new BatteryDriver()), cleanerDriver(new CleanerDriver()), motorDriver(new MotorDriver()),
+          dustSensorDriver(new DustSensorDriver()), dustProcessor(new DustProcessor()), obstacleProcessor(new ObstacleProcessor()),
+          obstacleSensorDriver(new ObstacleSensorDriver())
     {
     }
 
@@ -20,8 +24,11 @@ namespace rvc
     {
         delete batteryDriver;
         delete cleanerDriver;
+        delete motorDriver;
         delete dustSensorDriver;
         delete dustProcessor;
+        delete obstacleProcessor;
+        delete obstacleSensorDriver;
         delete currentMode;
     }
 
@@ -37,7 +44,8 @@ namespace rvc
 
     void Controller::startButtonPressed()
     {
-        // TODO
+        if (!this->isNowCharging)
+            currentMode = &currentMode->startButtonPressed(*motorDriver, *cleanerDriver);
     }
 
     void Controller::chargeBattery()

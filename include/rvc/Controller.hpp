@@ -11,6 +11,7 @@ namespace rvc
     class DustSensorDriver;
     class DustProcessor;
     class ObstacleProcessor;
+    class ObstacleSensorDriver;
 
     class Controller
     {
@@ -24,6 +25,7 @@ namespace rvc
         DustSensorDriver *dustSensorDriver;
         DustProcessor *dustProcessor;
         ObstacleProcessor *obstacleProcessor;
+        ObstacleSensorDriver *obstacleSensorDriver;
 
     public:
         Controller();
