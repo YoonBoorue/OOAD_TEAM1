@@ -64,10 +64,14 @@ namespace rvc
     {
         if (currentMode == nullptr) return;
 
-        bool shouldBoost = dustProcessor->decideIsDusted(*currentMode, *cleanerDriver);
-        if (shouldBoost) {
-            currentMode = &currentMode->dustDetected(*cleanerDriver);
-            startTimer();
+        bool isDusted = dustProcessor->decideIsDusted(*currentMode, *cleanerDriver);
+
+        if (isDusted) {
+            currentMode = &currentMode->dustDetected(*cleanerDriver);  // step 3
+
+            if (startTimer()) {  // step 5: BoostMode 진입 시 타이머 시작
+                currentMode = &currentMode->timerExpired(*cleanerDriver);  // step 6
+            }
         }
     }
 

@@ -11,11 +11,12 @@ namespace rvc
 
     OperatingMode &NormalMode::dustDetected(CleanerDriver &cleaner) 
     {
+        cleaner.decideSetting(true);
         static BoostMode boost;
         return boost;
     }
     bool StandbyMode::canCharge() const { return true; }
-    
+
     OperatingMode &StandbyMode::timerExpired(CleanerDriver &cleaner) 
     {
         cleaner.decideSetting(false);

@@ -5,12 +5,7 @@ namespace rvc
 
     bool DustProcessor::decideIsDusted(const OperatingMode & /*currentMode*/, CleanerDriver &cleaner)
     {
-      ++dustCount_;
-      if (dustCount_ >= BOOST_THRESHOLD) {
-        dustCount_ = 0;
-        return true;
-      }
-      return false;
+      return true;
     }
 
 } // namespace rvc
