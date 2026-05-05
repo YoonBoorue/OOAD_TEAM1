@@ -1,31 +1,85 @@
 #include "rvc/BatteryDriver.hpp"
 
-namespace rvc {
+#include <algorithm>
 
-BatteryDriver::BatteryDriver() : LV(100), status(false) {}
+namespace rvc
+{
 
-void BatteryDriver::initialize() {
-    // TODO
-}
+    BatteryDriver::BatteryDriver()
+        : LV(MaxLevel), status(false), charging(false) {}
 
-void BatteryDriver::turnOffBattery() {
-    // TODO
-}
+    void BatteryDriver::updateStatus()
+    {
+        status = (LV < MaxLevel);
 
-void BatteryDriver::declineLV() {
-    // TODO
-}
+        if (!status)
+        {
+            charging = false;
+        }
+    }
 
-void BatteryDriver::inclineLV() {
-    // TODO
-}
+    void BatteryDriver::initialize() { updateStatus(); }
 
-void BatteryDriver::startCharging() {
-    // TODO
-}
+    void BatteryDriver::turnOffBattery()
+    {
+        charging = false;
+        updateStatus();
+    }
 
-void BatteryDriver::stopCharging() {
-    // TODO
-}
+    void BatteryDriver::declineLV()
+    {
+        // If charging is in progress, do not discharge in this simple simulation.
+        if (charging)
+        {
+            return;
+        }
 
-}
+        LV = std::max(MinLevel, LV - DischargeStep);
+        updateStatus();
+    }
+
+    void BatteryDriver::inclineLV()
+    {
+        if (!charging)
+        {
+            return;
+        }
+
+        LV = std::min(MaxLevel, LV + ChargeStep);
+        updateStatus();
+    }
+
+    void BatteryDriver::startCharging()
+    {
+        updateStatus();
+        if (!status)
+        {
+            charging = false;
+            return;
+        }
+        charging = true;
+    }
+
+    void BatteryDriver::stopCharging()
+    {
+        charging = false;
+        updateStatus();
+    }
+
+    bool BatteryDriver::canCharge() const { return status; }
+
+    bool BatteryDriver::isLow() const { return LV <= LowBatteryThreshold; }
+
+    bool BatteryDriver::isFull() const { return LV >= MaxLevel; }
+
+    bool BatteryDriver::isCharging() const { return charging; }
+
+    int BatteryDriver::level() const { return LV; }
+
+    void BatteryDriver::setLevel(int level)
+    {
+        LV = std::clamp(level, MinLevel, MaxLevel);
+        updateStatus();
+    }
+
+} // namespace rvc

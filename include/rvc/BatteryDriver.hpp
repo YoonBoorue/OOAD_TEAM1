@@ -1,20 +1,49 @@
 #pragma once
 
-namespace rvc {
+namespace rvc
+{
 
-class BatteryDriver {
-private:
-    int LV;
-    bool status;
+    class BatteryDriver
+    {
+    public:
+        static constexpr int MinLevel = 0;
+        static constexpr int MaxLevel = 100;
+        static constexpr int LowBatteryThreshold = 10;
+        static constexpr int ChargeStep = 10;
+        static constexpr int DischargeStep = 1;
 
-public:
-    BatteryDriver();
-    void initialize();
-    void turnOffBattery();
-    void declineLV();
-    void inclineLV();
-    void startCharging();
-    void stopCharging();
-};
+    private:
+        int LV;
 
-}
+        // true  = battery can be charged
+        // false = battery is full and cannot be charged
+        bool status;
+
+        // true  = battery is currently charging
+        // false = battery is not currently charging
+        bool charging;
+
+        void updateStatus();
+
+    public:
+        BatteryDriver();
+
+        void initialize();
+        void turnOffBattery();
+
+        void startCharging();
+        void stopCharging();
+        void inclineLV();
+        void declineLV();
+
+        bool canCharge() const;
+        bool isLow() const;
+        bool isFull() const;
+        bool isCharging() const;
+        int level() const;
+
+        // Test / simulator helper
+        void setLevel(int level);
+    };
+
+} // namespace rvc
