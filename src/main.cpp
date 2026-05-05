@@ -2,7 +2,8 @@
 
 #include <iostream>
 
-int main() {
+int main()
+{
     rvc::RobotController controller;
 
     rvc::SensorSnapshot sensors{};

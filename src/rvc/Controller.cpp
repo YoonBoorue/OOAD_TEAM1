@@ -5,61 +5,70 @@
 #include "rvc/CleanerDriver.hpp"
 #include "rvc/DustSensorDriver.hpp"
 #include "rvc/DustProcessor.hpp"
+#include "rvc/MotorDriver.hpp"
+#include "rvc/ObstacleProcessor.hpp"
 
-namespace rvc {
+namespace rvc
+{
 
-Controller::Controller()
-    : power(false)
-    , isNowCharging(false)
-    , currentMode(nullptr)
-    , batteryDriver(new BatteryDriver())
-    , cleanerDriver(new CleanerDriver())
-    , dustSensorDriver(new DustSensorDriver())
-    , dustProcessor(new DustProcessor())
-{}
+    Controller::Controller()
+        : power(false), isNowCharging(false), currentMode(nullptr), batteryDriver(new BatteryDriver()), cleanerDriver(new CleanerDriver()), motorDriver(new MotorDriver()), dustSensorDriver(new DustSensorDriver()), dustProcessor(new DustProcessor()), obstacleProcessor(new ObstacleProcessor())
+    {
+    }
 
-Controller::~Controller() {
-    delete batteryDriver;
-    delete cleanerDriver;
-    delete dustSensorDriver;
-    delete dustProcessor;
-    delete currentMode;
-}
+    Controller::~Controller()
+    {
+        delete batteryDriver;
+        delete cleanerDriver;
+        delete dustSensorDriver;
+        delete dustProcessor;
+        delete currentMode;
+    }
 
-bool Controller::startTimer() {
-    return false;
-}
+    bool Controller::startTimer()
+    {
+        return false;
+    }
 
-void Controller::powerButtonPressed() {
-    // TODO
-}
+    void Controller::powerButtonPressed()
+    {
+        // TODO
+    }
 
-void Controller::startButtonPressed() {
-    // TODO
-}
+    void Controller::startButtonPressed()
+    {
+        // TODO
+    }
 
-void Controller::chargeBattery() {
-    // TODO
-}
+    void Controller::chargeBattery()
+    {
+        // TODO
+    }
 
-void Controller::lowBatteryDetected() {
-    // TODO
-}
+    void Controller::lowBatteryDetected()
+    {
+        // TODO
+    }
 
-void Controller::lowBatteryCleared() {
-    // TODO
-}
+    void Controller::lowBatteryCleared()
+    {
+        // TODO
+    }
 
-void Controller::stopCharging() {
-    // TODO
-}
+    void Controller::stopCharging()
+    {
+        // TODO
+    }
 
-void Controller::dustDetected() {
-    // TODO
-}
+    void Controller::dustDetected()
+    {
+        // TODO
+    }
 
-void Controller::obstacleDetected(const bool direction[3]) {
-    // TODO
-}
+    void Controller::obstacleDetected(const std::array<bool, 3> &dir)
+    {
+        bool fw = this->motorDriver->checkIsForward();
+        obstacleProcessor->decideDirection(dir, *currentMode, *motorDriver);
+    }
 
 }

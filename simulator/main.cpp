@@ -40,7 +40,6 @@ int main()
     for (std::size_t tick = 0; tick < scenario.size(); ++tick)
     {
         const auto command = controller.decide(scenario[tick]);
-
         std::cout << "[tick " << tick << "] "
                   << "motion=" << toString(command.motion)
                   << ", cleaningPowerUp=" << command.cleaningPowerUp
