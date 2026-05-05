@@ -71,6 +71,7 @@ if (BUILD_TESTING)
     FetchContent_MakeAvailable(googletest)
 
     add_executable(ooad_tests
+        tests/MotorDriverTest.cpp
         tests/RobotControllerTest.cpp
     )
 
