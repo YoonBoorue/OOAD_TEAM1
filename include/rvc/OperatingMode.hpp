@@ -1,41 +1,36 @@
 #pragma once
-#include "rvc/MotorDriver.hpp"
-#include "rvc/CleanerDriver.hpp"
-#include "rvc/Direction.hpp"
 
-namespace rvc
-{
-    class CleanerDriver;
-    class MotorDriver;
+namespace rvc {
 
-    enum class ModeKind
-    {
-        Standby,
-        Normal,
-        Boost,
-        LowBattery
-    };
+class CleanerDriver;
+class MotorDriver;
 
-    // 상태 패턴 인터페이스
-    class OperatingMode
-    {
-    public:
-        virtual ~OperatingMode() = default;
+enum class ModeKind {
+    Standby,
+    Normal,
+    Boost,
+    LowBattery
+};
 
-        virtual bool checkIsMoving() const = 0;
-        virtual OperatingMode &startButtonPressed() = 0;
-        virtual OperatingMode &lowBatteryDetected() = 0;
-        virtual OperatingMode &lowBatteryCleared() = 0;
-        virtual OperatingMode &dustDetected() = 0;
-        virtual bool canCharge() const = 0;
-        virtual OperatingMode &timerExpired() = 0;
+// State-pattern interface for RVC operating modes.
+class OperatingMode {
+public:
+    virtual ~OperatingMode() = default;
 
-        // Cleaner/Motor side effects are owned by each mode.
-        // Controller calls this method, but does not decide which driver method to call.
-        virtual void apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) const = 0;
+    virtual bool checkIsMoving() const = 0;
+    virtual OperatingMode& startButtonPressed() = 0;
+    virtual OperatingMode& lowBatteryDetected() = 0;
+    virtual OperatingMode& lowBatteryCleared() = 0;
+    virtual OperatingMode& dustDetected() = 0;
+    virtual bool canCharge() const = 0;
+    virtual OperatingMode& timerExpired() = 0;
 
-        virtual ModeKind kind() const = 0;
-        virtual const char *name() const = 0;
-    };
+    // Cleaner/Motor commands are intentionally delegated to Mode.
+    // Controller directly touches Cleaner/Motor only in power on/off sequences.
+    virtual void apply(CleanerDriver& cleanerDriver, MotorDriver& motorDriver) = 0;
+
+    virtual ModeKind kind() const = 0;
+    virtual const char* name() const = 0;
+};
 
 } // namespace rvc
