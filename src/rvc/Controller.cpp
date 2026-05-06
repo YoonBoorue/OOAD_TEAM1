@@ -1,3 +1,6 @@
+#include <thread>
+#include <chrono>
+
 #include "rvc/Controller.hpp"
 #include "rvc/OperatingMode.hpp"
 #include "rvc/Modes.hpp"
@@ -27,7 +30,13 @@ namespace rvc
 
     bool Controller::startTimer()
     {
-        return false;
+        std::thread([this]() {
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+            if (currentMode != nullptr) {
+                currentMode = &currentMode->timerExpired(*cleanerDriver);
+            }
+        }).detach();
+        return true;
     }
 
     void Controller::powerButtonPressed()
@@ -67,11 +76,8 @@ namespace rvc
         bool isDusted = dustProcessor->decideIsDusted(*currentMode, *cleanerDriver);
 
         if (isDusted) {
-            currentMode = &currentMode->dustDetected(*cleanerDriver);  // step 3
-
-            if (startTimer()) {  // step 5: BoostMode 진입 시 타이머 시작
-                currentMode = &currentMode->timerExpired(*cleanerDriver);  // step 6
-            }
+            currentMode = &currentMode->dustDetected(*cleanerDriver);
+            startTimer();
         }
     }
 

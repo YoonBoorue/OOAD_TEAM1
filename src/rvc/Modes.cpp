@@ -8,21 +8,9 @@ namespace rvc
     OperatingMode &StandbyMode::startButtonPressed(MotorDriver &motor, CleanerDriver &cleaner) { return *this; }
     OperatingMode &StandbyMode::lowBatteryDetected(MotorDriver &motor, CleanerDriver &cleaner) { return *this; }
     OperatingMode &StandbyMode::lowBatteryCleared() { return *this; }
-
-    OperatingMode &NormalMode::dustDetected(CleanerDriver &cleaner) 
-    {
-        cleaner.decideSetting(true);
-        static BoostMode boost;
-        return boost;
-    }
+    OperatingMode &StandbyMode::dustDetected(CleanerDriver &cleaner) { return *this; }
     bool StandbyMode::canCharge() const { return true; }
-
-    OperatingMode &StandbyMode::timerExpired(CleanerDriver &cleaner) 
-    {
-        cleaner.decideSetting(false);
-        static NormalMode normal;
-        return normal;
-    }
+    OperatingMode &StandbyMode::timerExpired(CleanerDriver &cleaner) { return *this; }
 
     // --- NormalMode ---
     void NormalMode::checkIsMoving(Direction direction, MotorDriver &motor) const
@@ -45,7 +33,11 @@ namespace rvc
     OperatingMode &NormalMode::startButtonPressed(MotorDriver &motor, CleanerDriver &cleaner) { return *this; }
     OperatingMode &NormalMode::lowBatteryDetected(MotorDriver &motor, CleanerDriver &cleaner) { return *this; }
     OperatingMode &NormalMode::lowBatteryCleared() { return *this; }
-    OperatingMode &NormalMode::dustDetected(CleanerDriver &cleaner) { return *this; }
+    OperatingMode &NormalMode::dustDetected(CleanerDriver &cleaner)
+    {
+        cleaner.decideSetting(true);
+        return *(new BoostMode());
+    }
     bool NormalMode::canCharge() const { return false; }
     OperatingMode &NormalMode::timerExpired(CleanerDriver &cleaner) {}
 
@@ -72,7 +64,11 @@ namespace rvc
     OperatingMode &BoostMode::lowBatteryCleared() { return *this; }
     OperatingMode &BoostMode::dustDetected(CleanerDriver &cleaner) { return *this; }
     bool BoostMode::canCharge() const { return false; }
-    OperatingMode &BoostMode::timerExpired(CleanerDriver &cleaner) {}
+    OperatingMode &BoostMode::timerExpired(CleanerDriver &cleaner)
+    {
+        cleaner.decideSetting(false);
+        return *(new NormalMode());
+    }
 
     // --- LowBatteryMode ---
     void LowBatteryMode::checkIsMoving(Direction direction, MotorDriver &motor) const {}

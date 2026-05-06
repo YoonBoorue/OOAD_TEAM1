@@ -5,7 +5,6 @@ namespace rvc {
 
 class CleanerDriver {
 private:
-    bool status;
     std::string mode;
 
 public:
