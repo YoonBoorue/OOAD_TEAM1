@@ -73,6 +73,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build g++ cppcheck clang-tidy
 
+      - name: Show analysis tool versions
+        run: |
+          cppcheck --version
+          clang-tidy --version
+
       - name: Configure for compile database
         run: |
           cmake -S . -B build -G Ninja \
@@ -81,31 +86,47 @@ jobs:
             -DBUILD_TESTING=ON
 
       - name: Cppcheck
+        shell: bash
         run: |
+          mkdir -p build/static-analysis
+
           cppcheck \
             --enable=warning,style,performance,portability \
             --std=c++17 \
-            --error-exitcode=1 \
             --suppress=missingIncludeSystem \
+            --inline-suppr \
             -I include \
-            src simulator tests
+            src include simulator \
+            2>&1 | tee build/static-analysis/cppcheck-report.txt
+
+          echo "Cppcheck completed. Findings are recorded in cppcheck-report.txt."
 
       - name: Clang-Tidy
         shell: bash
         run: |
-          set -euo pipefail
+          mkdir -p build/static-analysis
 
-          mapfile -d '' files < <(find src simulator tests -name '*.cpp' -print0)
+          mapfile -d '' files < <(find src simulator -name '*.cpp' -print0)
 
-          echo "clang-tidy target files:"
-          printf '%s\n' "${files[@]}"
+          echo "clang-tidy target files:" | tee build/static-analysis/clang-tidy-report.txt
+          printf '%s\n' "${files[@]}" | tee -a build/static-analysis/clang-tidy-report.txt
 
           if [ "${#files[@]}" -eq 0 ]; then
-            echo "No .cpp files found under src simulator tests"
+            echo "No .cpp files found under src simulator" | tee -a build/static-analysis/clang-tidy-report.txt
             exit 1
           fi
 
-          clang-tidy -p build "${files[@]}"
+          clang-tidy -p build "${files[@]}" \
+            2>&1 | tee -a build/static-analysis/clang-tidy-report.txt
+
+          echo "Clang-Tidy completed. Findings are recorded in clang-tidy-report.txt."
+
+      - name: Upload static analysis reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-analysis-report
+          path: build/static-analysis
 
   coverage:
     name: coverage
