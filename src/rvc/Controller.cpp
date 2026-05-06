@@ -40,10 +40,8 @@ namespace rvc
 
         // Cleaner/Motor commands are delegated to Mode.
         // Controller touches Cleaner/Motor directly only in power on/off sequences.
-        if (power && currentMode != nullptr)
-        {
+        if (power)
             currentMode->apply(*cleanerDriver, *motorDriver);
-        }
     }
 
     bool Controller::canStartCharging() const

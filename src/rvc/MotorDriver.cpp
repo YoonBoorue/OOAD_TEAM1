@@ -59,14 +59,12 @@ namespace rvc
         }
     }
 
-    void MotorDriver::moveBackward()
-    {
-        this->forward = false;
-    }
+    void MotorDriver::moveBackward() { this->forward = false; }
 
-    bool MotorDriver::checkIsForward()
-    {
-        return false;
-    }
+    bool MotorDriver::checkIsForward() { return false; }
+
+    bool MotorDriver::isMoving() const { return status; }
+
+    Direction MotorDriver::currentDirection() const { return moveDirection; }
 
 }
