@@ -20,7 +20,7 @@ namespace rvc
         void turnRight();
         void moveBackward();
 
-        bool checkIsForward();
+        bool checkIsForward() const;
         bool isMoving() const;
         Direction currentDirection() const;
     };

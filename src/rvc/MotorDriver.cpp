@@ -4,10 +4,18 @@
 namespace rvc
 {
 
-    MotorDriver::MotorDriver() : status(false), moveDirection(Direction::FRONT), forward(false) {}
+    MotorDriver::MotorDriver()
+        : status(false),
+          moveDirection(Direction::FRONT),
+          forward(false)
+    {
+    }
 
     void MotorDriver::initialize()
     {
+        status = false;
+        moveDirection = Direction::FRONT;
+        forward = false;
     }
 
     void MotorDriver::moveForward()
@@ -61,7 +69,10 @@ namespace rvc
 
     void MotorDriver::moveBackward() { this->forward = false; }
 
-    bool MotorDriver::checkIsForward() { return false; }
+    bool MotorDriver::checkIsForward() const
+    {
+        return status && forward;
+    }
 
     bool MotorDriver::isMoving() const { return status; }
 
