@@ -15,8 +15,8 @@ namespace rvc
     private:
         int LV;
 
-        // true  = battery can be charged
-        // false = battery is full and cannot be charged
+        // true  = battery is full and cannot be charged
+        // false = battery can be charged
         bool status;
 
         // true  = battery is currently charging

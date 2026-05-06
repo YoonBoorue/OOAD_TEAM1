@@ -13,9 +13,10 @@ namespace rvc
     class StandbyMode : public OperatingMode
     {
     public:
-        bool checkIsMoving() const override;
+        void checkIsMoving(Direction direction, MotorDriver &motorDriver) const override;
+
         OperatingMode &startButtonPressed() override;
-        OperatingMode &lowBatteryDetected() override;
+        OperatingMode &lowBatteryDetected(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) override;
         OperatingMode &lowBatteryCleared() override;
         OperatingMode &dustDetected() override;
         bool canCharge() const override;
@@ -28,9 +29,10 @@ namespace rvc
     class NormalMode : public OperatingMode
     {
     public:
-        bool checkIsMoving() const override;
+        void checkIsMoving(Direction direction, MotorDriver &motorDriver) const override;
+
         OperatingMode &startButtonPressed() override;
-        OperatingMode &lowBatteryDetected() override;
+        OperatingMode &lowBatteryDetected(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) override;
         OperatingMode &lowBatteryCleared() override;
         OperatingMode &dustDetected() override;
         bool canCharge() const override;
@@ -43,9 +45,10 @@ namespace rvc
     class BoostMode : public OperatingMode
     {
     public:
-        bool checkIsMoving() const override;
+        void checkIsMoving(Direction direction, MotorDriver &motorDriver) const override;
+
         OperatingMode &startButtonPressed() override;
-        OperatingMode &lowBatteryDetected() override;
+        OperatingMode &lowBatteryDetected(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) override;
         OperatingMode &lowBatteryCleared() override;
         OperatingMode &dustDetected() override;
         bool canCharge() const override;
@@ -58,9 +61,10 @@ namespace rvc
     class LowBatteryMode : public OperatingMode
     {
     public:
-        bool checkIsMoving() const override;
+        void checkIsMoving(Direction direction, MotorDriver &motorDriver) const override;
+
         OperatingMode &startButtonPressed() override;
-        OperatingMode &lowBatteryDetected() override;
+        OperatingMode &lowBatteryDetected(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) override;
         OperatingMode &lowBatteryCleared() override;
         OperatingMode &dustDetected() override;
         bool canCharge() const override;
@@ -70,4 +74,4 @@ namespace rvc
         const char *name() const override;
     };
 
-}
+} // namespace rvc

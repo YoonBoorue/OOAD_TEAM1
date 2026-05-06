@@ -1,5 +1,7 @@
 #pragma once
 
+#include "rvc/Direction.hpp"
+
 namespace rvc
 {
 
@@ -14,15 +16,18 @@ namespace rvc
         LowBattery
     };
 
-    // State-pattern interface for RVC operating modes.
     class OperatingMode
     {
     public:
         virtual ~OperatingMode() = default;
 
-        virtual bool checkIsMoving() const = 0;
+        virtual void checkIsMoving(Direction direction, MotorDriver &motorDriver) const = 0;
+
         virtual OperatingMode &startButtonPressed() = 0;
-        virtual OperatingMode &lowBatteryDetected() = 0;
+
+        // SD-15: Mode receives Motor/Cleaner and performs stop actions.
+        virtual OperatingMode &lowBatteryDetected(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) = 0;
+
         virtual OperatingMode &lowBatteryCleared() = 0;
         virtual OperatingMode &dustDetected() = 0;
         virtual bool canCharge() const = 0;

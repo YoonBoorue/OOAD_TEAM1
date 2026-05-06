@@ -6,19 +6,25 @@ namespace rvc
 {
 
     BatteryDriver::BatteryDriver()
-        : LV(MaxLevel), status(false), charging(false) {}
+        : LV(MaxLevel), status(true), charging(false) {}
 
     void BatteryDriver::updateStatus()
     {
-        status = (LV < MaxLevel);
+        // SD-10 기준:
+        // status == false → 충전 가능
+        // status == true  → 완충 상태, 충전 불가
+        status = (LV >= MaxLevel);
 
-        if (!status)
+        if (status)
         {
             charging = false;
         }
     }
 
-    void BatteryDriver::initialize() { updateStatus(); }
+    void BatteryDriver::initialize()
+    {
+        updateStatus();
+    }
 
     void BatteryDriver::turnOffBattery()
     {
@@ -28,7 +34,6 @@ namespace rvc
 
     void BatteryDriver::declineLV()
     {
-        // If charging is in progress, do not discharge in this simple simulation.
         if (charging)
         {
             return;
@@ -52,11 +57,14 @@ namespace rvc
     void BatteryDriver::startCharging()
     {
         updateStatus();
-        if (!status)
+
+        // status == true means full, so charging cannot start.
+        if (status)
         {
             charging = false;
             return;
         }
+
         charging = true;
     }
 
@@ -66,11 +74,11 @@ namespace rvc
         updateStatus();
     }
 
-    bool BatteryDriver::canCharge() const { return status; }
+    bool BatteryDriver::canCharge() const { return !status; }
 
     bool BatteryDriver::isLow() const { return LV <= LowBatteryThreshold; }
 
-    bool BatteryDriver::isFull() const { return LV >= MaxLevel; }
+    bool BatteryDriver::isFull() const { return status; }
 
     bool BatteryDriver::isCharging() const { return charging; }
 
