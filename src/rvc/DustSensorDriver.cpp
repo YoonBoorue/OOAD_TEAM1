@@ -1,15 +1,24 @@
 #include "rvc/DustSensorDriver.hpp"
 
-namespace rvc {
+namespace rvc
+{
+    DustSensorDriver::DustSensorDriver()
+        : dust(false), active(false) {}
 
-DustSensorDriver::DustSensorDriver() : dust(false) {}
+    void DustSensorDriver::initialize()
+    {
+        active = true;
+        dust = false;
+    }
 
-void DustSensorDriver::initialize() {
-    // TODO
-}
+    void DustSensorDriver::deactivateDustSensor()
+    {
+        active = false;
+        dust = false;
+    }
 
-void DustSensorDriver::deactivateDustSensor() {
-    // TODO
-}
+    bool DustSensorDriver::isActive() const { return active; }
+
+    bool DustSensorDriver::isDustDetected() const { return dust; }
 
 }

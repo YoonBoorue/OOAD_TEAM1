@@ -69,6 +69,12 @@ namespace rvc
         std::string currentModeName() const;
 
         // Simulator/test support
+        bool isDustSensorActive() const;
+        bool isObstacleSensorActive() const;
+        bool isCleanerCleaning() const;
+        std::string cleanerMode() const;
+        bool isMotorMoving() const;
+        bool isMotorForward() const;
         void setBatteryLevel(int level);
     };
 

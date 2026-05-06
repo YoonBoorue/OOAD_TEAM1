@@ -236,4 +236,36 @@ namespace rvc
         lowBatteryClearedEventSent = !batteryDriver->isLow();
     }
 
+    // tests
+
+    bool Controller::isDustSensorActive() const
+    {
+        return dustSensorDriver->isActive();
+    }
+
+    bool Controller::isObstacleSensorActive() const
+    {
+        return obstacleSensorDriver->isActive();
+    }
+
+    bool Controller::isCleanerCleaning() const
+    {
+        return cleanerDriver->isCleaning();
+    }
+
+    std::string Controller::cleanerMode() const
+    {
+        return cleanerDriver->currentMode();
+    }
+
+    bool Controller::isMotorMoving() const
+    {
+        return motorDriver->isMoving();
+    }
+
+    bool Controller::isMotorForward() const
+    {
+        return motorDriver->checkIsForward();
+    }
+
 } // namespace rvc

@@ -78,7 +78,7 @@ namespace rvc
     bool StandbyMode::canCharge() const { return true; }
     OperatingMode &StandbyMode::timerExpired() { return standbyMode(); }
 
-    void StandbyMode::apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver)
+    void StandbyMode::apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) const
     {
         motorDriver.stopMoving();
         cleanerDriver.stopCleaning();
@@ -98,7 +98,7 @@ namespace rvc
     bool NormalMode::canCharge() const { return false; }
     OperatingMode &NormalMode::timerExpired() { return normalMode(); }
 
-    void NormalMode::apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver)
+    void NormalMode::apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) const
     {
         motorDriver.moveForward();
         cleanerDriver.startCleaning();
@@ -118,7 +118,7 @@ namespace rvc
     bool BoostMode::canCharge() const { return false; }
     OperatingMode &BoostMode::timerExpired() { return normalMode(); }
 
-    void BoostMode::apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver)
+    void BoostMode::apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) const
     {
         motorDriver.moveForward();
         cleanerDriver.startCleaning();
@@ -139,7 +139,7 @@ namespace rvc
     bool LowBatteryMode::canCharge() const { return true; }
     OperatingMode &LowBatteryMode::timerExpired() { return lowBatteryMode(); }
 
-    void LowBatteryMode::apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver)
+    void LowBatteryMode::apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) const
     {
         motorDriver.stopMoving();
         cleanerDriver.stopCleaning();

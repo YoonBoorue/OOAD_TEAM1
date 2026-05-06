@@ -35,7 +35,7 @@ namespace rvc
 
         // Cleaner/Motor commands are intentionally delegated to Mode.
         // Controller directly touches Cleaner/Motor only in power on/off sequences.
-        virtual void apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) = 0;
+        virtual void apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) const = 0;
 
         virtual ModeKind kind() const = 0;
         virtual const char *name() const = 0;

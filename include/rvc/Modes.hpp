@@ -21,7 +21,7 @@ namespace rvc
         OperatingMode &dustDetected() override;
         bool canCharge() const override;
         OperatingMode &timerExpired() override;
-        void apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) override;
+        void apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) const override;
         ModeKind kind() const override;
         const char *name() const override;
     };
@@ -37,7 +37,7 @@ namespace rvc
         OperatingMode &dustDetected() override;
         bool canCharge() const override;
         OperatingMode &timerExpired() override;
-        void apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) override;
+        void apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) const override;
         ModeKind kind() const override;
         const char *name() const override;
     };
@@ -53,7 +53,7 @@ namespace rvc
         OperatingMode &dustDetected() override;
         bool canCharge() const override;
         OperatingMode &timerExpired() override;
-        void apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) override;
+        void apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) const override;
         ModeKind kind() const override;
         const char *name() const override;
     };
@@ -69,7 +69,7 @@ namespace rvc
         OperatingMode &dustDetected() override;
         bool canCharge() const override;
         OperatingMode &timerExpired() override;
-        void apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) override;
+        void apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) const override;
         ModeKind kind() const override;
         const char *name() const override;
     };
