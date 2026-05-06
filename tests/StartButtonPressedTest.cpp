@@ -6,7 +6,10 @@
 // TC-07~TC-12: 실제 NormalMode/BoostMode 구현으로 SD-07 내부 동작 확인
 // TC-13~TC-21: 실제 구현만으로 관찰하기 어려운 위임 횟수, 전달 인자, 반환 모드 갱신만 Stub 사용
 
-// 현재 Controller 생성자는 currentMode 초기화가 없어서 테스트에서만 내부 상태 세팅
+// 현재 Controller 생성자는 currentMode를 nullptr로 초기화하므로 테스트에서 실제 모드 객체를 세팅
+
+// Controller의 내부 상태를 직접 세팅/검증할 public API가 없어,
+// SD-02/SD-07 단위 테스트에서만 제한적으로 private 접근을 허용
 #define private public
 #include "rvc/Controller.hpp"
 #include "rvc/CleanerDriver.hpp"
