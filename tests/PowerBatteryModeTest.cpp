@@ -129,21 +129,21 @@ TEST(BatteryDriverTest, LowBatteryThresholdIsTenOrLess)
 
 TEST(ModeTest, StandbyModeStartButtonChangesToNormalMode)
 {
-    OperatingMode &nextMode = standbyMode().startButtonPressed();
+    const OperatingMode &nextMode = standbyMode().startButtonPressed();
 
     EXPECT_EQ(nextMode.kind(), ModeKind::Normal);
 }
 
 TEST(ModeTest, NormalModeStartButtonChangesToStandbyMode)
 {
-    OperatingMode &nextMode = normalMode().startButtonPressed();
+    const OperatingMode &nextMode = normalMode().startButtonPressed();
 
     EXPECT_EQ(nextMode.kind(), ModeKind::Standby);
 }
 
 TEST(ModeTest, LowBatteryModeIgnoresStartButton)
 {
-    OperatingMode &nextMode = lowBatteryMode().startButtonPressed();
+    const OperatingMode &nextMode = lowBatteryMode().startButtonPressed();
 
     EXPECT_EQ(nextMode.kind(), ModeKind::LowBattery);
 }
@@ -217,7 +217,7 @@ TEST(ModeTest, LowBatteryDetectedChangesToLowBatteryModeAndStopsMotorCleaner)
     ASSERT_TRUE(cleaner.isCleaning());
     ASSERT_TRUE(motor.isMoving());
 
-    OperatingMode &nextMode = normalMode().lowBatteryDetected(cleaner, motor);
+    const OperatingMode &nextMode = normalMode().lowBatteryDetected(cleaner, motor);
 
     EXPECT_EQ(nextMode.kind(), ModeKind::LowBattery);
     EXPECT_FALSE(cleaner.isCleaning());
@@ -228,7 +228,7 @@ TEST(ModeTest, LowBatteryDetectedChangesToLowBatteryModeAndStopsMotorCleaner)
 
 TEST(ModeTest, LowBatteryClearedChangesToStandbyMode)
 {
-    OperatingMode &nextMode = lowBatteryMode().lowBatteryCleared();
+    const OperatingMode &nextMode = lowBatteryMode().lowBatteryCleared();
 
     EXPECT_EQ(nextMode.kind(), ModeKind::Standby);
 }
