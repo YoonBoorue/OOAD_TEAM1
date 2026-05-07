@@ -1,3 +1,6 @@
+#include <thread>
+#include <chrono>
+
 #include "rvc/Controller.hpp"
 
 #include "rvc/BatteryDriver.hpp"
@@ -7,6 +10,7 @@
 #include "rvc/MotorDriver.hpp"
 #include "rvc/ObstacleSensorDriver.hpp"
 #include "rvc/ObstacleProcessor.hpp"
+#include "rvc/DustProcessor.hpp"
 
 namespace rvc
 {
@@ -19,6 +23,7 @@ namespace rvc
           cleanerDriver(new CleanerDriver()),
           dustSensorDriver(new DustSensorDriver()),
           motorDriver(new MotorDriver()),
+          dustProcessor(new DustProcessor()),
           obstacleSensorDriver(new ObstacleSensorDriver()),
           obstacleProcessor(new ObstacleProcessor()) {}
 
@@ -28,6 +33,7 @@ namespace rvc
         delete cleanerDriver;
         delete dustSensorDriver;
         delete motorDriver;
+        delete dustProcessor;
         delete obstacleSensorDriver;
         delete obstacleProcessor;
 
@@ -56,8 +62,13 @@ namespace rvc
 
     bool Controller::startTimer()
     {
-        // UC6 Adjust Boost Mode is intentionally left for the separate boost branch.
-        return false;
+        std::thread([this]() {
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+            if (currentMode != nullptr) {
+                currentMode = &currentMode->timerExpired(); 
+            }
+        }).detach();
+        return true;
     }
 
     void Controller::powerButtonPressed()
@@ -181,7 +192,15 @@ namespace rvc
 
     void Controller::dustDetected()
     {
-        // UC6 Adjust Boost Mode is handled in another branch.
+        if (!power || currentMode == nullptr) return;
+
+        bool hasDust = dustSensorDriver->hasDust();
+        if (hasDust) {
+            enterMode(currentMode->dustDetected());
+            if (dynamic_cast<BoostMode *>(currentMode) != nullptr) {
+                startTimer();
+            }
+        }
     }
 
     void Controller::obstacleDetected(const bool direction[3])
