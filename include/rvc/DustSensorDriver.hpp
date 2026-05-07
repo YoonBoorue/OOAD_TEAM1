@@ -2,20 +2,23 @@
 
 namespace rvc
 {
+class DustSensorDriver {
+private:
+    bool dust;
+    bool readDustFromSensor() const { return dust; }
 
-    class DustSensorDriver
-    {
-    private:
-        bool dust;
-        bool active;
+    //test
+    bool active;
 
-    public:
-        DustSensorDriver();
-        void initialize();
-        void deactivateDustSensor();
+public:
+    DustSensorDriver();
+    void initialize();
+    void deactivateDustSensor();
+    bool hasDust() const { return readDustFromSensor(); }
 
-        bool isActive() const;
-        bool isDustDetected() const;
-    };
+    //test
+    bool isActive() const;
+    bool isDustDetected() const;
+};
 
 }
