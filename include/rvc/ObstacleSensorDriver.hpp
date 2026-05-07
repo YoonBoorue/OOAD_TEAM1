@@ -1,15 +1,20 @@
 #pragma once
 
-namespace rvc {
+namespace rvc
+{
 
-class ObstacleSensorDriver {
-private:
-    bool direction[3];
+    class ObstacleSensorDriver
+    {
+    private:
+        bool direction[3];
+        bool active;
 
-public:
-    ObstacleSensorDriver();
-    void initialize();
-    void deactivateObstacleSensor();
-};
+    public:
+        ObstacleSensorDriver();
+        void initialize();
+        void deactivateObstacleSensor();
+
+        bool isActive() const;
+    };
 
 }

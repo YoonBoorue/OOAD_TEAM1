@@ -1,23 +1,21 @@
 #include "rvc/CleanerDriver.hpp"
 
-namespace rvc {
+namespace rvc
+{
 
-CleanerDriver::CleanerDriver() : mode("off") {}
+    CleanerDriver::CleanerDriver()
+        : mode("off") {}
 
-void CleanerDriver::initialize() {
-    // TODO
-}
+    void CleanerDriver::initialize() { mode = "off"; }
 
-void CleanerDriver::startCleaning() {
-    // TODO
-}
+    void CleanerDriver::startCleaning() { mode = "normal"; }
 
-void CleanerDriver::stopCleaning() {
-    // TODO
-}
+    void CleanerDriver::stopCleaning() { mode = "off"; }
 
-void CleanerDriver::decideSetting(bool boost) {
-    mode = boost ? "boost" : "normal";
-}
+    void CleanerDriver::decideSetting(bool boost) { mode = boost ? "boost" : "normal"; }
+
+    bool CleanerDriver::isCleaning() const { return mode != "off"; }
+
+    const std::string &CleanerDriver::currentMode() const { return mode; }
 
 }
