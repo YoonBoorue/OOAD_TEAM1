@@ -13,7 +13,7 @@ namespace rvc
 
     Controller::Controller()
         : power(false),
-          lowBatteryClearedEventSent(true),
+          isNowCharging(false),
           currentMode(nullptr),
           batteryDriver(new BatteryDriver()),
           cleanerDriver(new CleanerDriver()),
@@ -75,8 +75,6 @@ namespace rvc
             cleanerDriver->initialize();
             motorDriver->initialize();
             obstacleSensorDriver->initialize();
-
-            lowBatteryClearedEventSent = !batteryDriver->isLow();
             return;
         }
 
@@ -91,13 +89,12 @@ namespace rvc
         motorDriver->stopMoving();
         cleanerDriver->stopCleaning();
 
-        currentMode = nullptr;
-        lowBatteryClearedEventSent = true;
+        currentMode = nullptr; // mode delete
     }
 
     void Controller::startButtonPressed()
     {
-        if (!power || currentMode == nullptr || batteryDriver->isCharging())
+        if (!power || currentMode == nullptr)
         {
             return;
         }
@@ -113,26 +110,39 @@ namespace rvc
             return;
         }
 
-        if (!batteryDriver->startCharging())
+        isNowCharging = batteryDriver->startCharging();
+
+        if (!isNowCharging)
         {
             return;
         }
 
-        // One charging loop iteration. Repeated chargingTick() calls represent SD-10 loop.
+        // One charging loop iteration.
         chargingTick();
     }
 
     void Controller::chargingTick()
     {
-        if (!batteryDriver->inclineLV())
+        if (!isNowCharging)
         {
             return;
         }
 
+        if (!batteryDriver->inclineLV())
+        {
+            isNowCharging = false;
+            return;
+        }
+
+        if (batteryDriver->isFull())
+        {
+            isNowCharging = false;
+        }
+
         if (power &&
             currentMode != nullptr &&
-            batteryDriver->level() > BatteryDriver::LowBatteryThreshold &&
-            !lowBatteryClearedEventSent)
+            currentMode->kind() == ModeKind::LowBattery &&
+            batteryDriver->level() > BatteryDriver::LowBatteryThreshold)
         {
             lowBatteryCleared();
         }
@@ -146,8 +156,6 @@ namespace rvc
             return;
         }
 
-        lowBatteryClearedEventSent = false;
-
         // SD-15: currentMode = lowBatteryDetected(motor, cleaner)
         currentMode = &currentMode->lowBatteryDetected(*cleanerDriver, *motorDriver);
     }
@@ -156,11 +164,8 @@ namespace rvc
     {
         if (!power || currentMode == nullptr)
         {
-            lowBatteryClearedEventSent = true;
             return;
         }
-
-        lowBatteryClearedEventSent = true;
 
         // SD-10: currentMode = lowBatteryCleared()
         currentMode = &currentMode->lowBatteryCleared();
@@ -199,7 +204,7 @@ namespace rvc
 
     bool Controller::isCharging() const
     {
-        return batteryDriver->isCharging();
+        return isNowCharging;
     }
 
     int Controller::batteryLevel() const
@@ -225,7 +230,6 @@ namespace rvc
     void Controller::setBatteryLevel(int level)
     {
         batteryDriver->setLevel(level);
-        lowBatteryClearedEventSent = !batteryDriver->isLow();
     }
 
     // tests

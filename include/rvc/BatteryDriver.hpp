@@ -19,10 +19,6 @@ namespace rvc
         // false = battery can be charged
         bool status;
 
-        // true  = battery is currently charging
-        // false = battery is not currently charging
-        bool charging;
-
         void updateStatus();
 
     public:
@@ -39,7 +35,6 @@ namespace rvc
         /// TEST
         bool isLow() const;
         bool isFull() const;
-        bool isCharging() const;
         int level() const;
 
         // Test / simulator helper

@@ -20,7 +20,7 @@ namespace rvc
     {
     private:
         bool power;
-        bool lowBatteryClearedEventSent;
+        bool isNowCharging;
 
         OperatingMode *currentMode; // non-owning pointer to mode singleton
 

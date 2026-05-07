@@ -6,19 +6,14 @@ namespace rvc
 {
 
     BatteryDriver::BatteryDriver()
-        : LV(MaxLevel), status(true), charging(false) {}
+        : LV(MaxLevel), status(true)
+    {
+    }
 
     void BatteryDriver::updateStatus()
     {
-        // SD-10 기준:
-        // status == false → 충전 가능
-        // status == true  → 완충 상태, 충전 불가
+        // status == true means full / not chargeable.
         status = (LV >= MaxLevel);
-
-        if (status)
-        {
-            charging = false;
-        }
     }
 
     void BatteryDriver::initialize()
@@ -28,61 +23,57 @@ namespace rvc
 
     void BatteryDriver::turnOffBattery()
     {
-        charging = false;
         updateStatus();
     }
 
     void BatteryDriver::declineLV()
     {
-        if (charging)
-        {
-            return;
-        }
-
         LV = std::max(MinLevel, LV - DischargeStep);
         updateStatus();
     }
 
     bool BatteryDriver::inclineLV()
     {
-        if (!charging)
+        if (status)
         {
             return false;
         }
 
+        const int previousLevel = LV;
+
         LV = std::min(MaxLevel, LV + ChargeStep);
         updateStatus();
 
-        return true;
+        return LV > previousLevel;
     }
 
     bool BatteryDriver::startCharging()
     {
         updateStatus();
 
-        if (status)
-        {
-            charging = false;
-            return false;
-        }
-
-        charging = true;
-        return true;
+        // SD-10: [status = F]일 때 충전 가능
+        return !status;
     }
 
     void BatteryDriver::stopCharging()
     {
-        charging = false;
         updateStatus();
     }
 
-    bool BatteryDriver::isLow() const { return LV <= LowBatteryThreshold; }
+    bool BatteryDriver::isLow() const
+    {
+        return LV <= LowBatteryThreshold;
+    }
 
-    bool BatteryDriver::isFull() const { return status; }
+    bool BatteryDriver::isFull() const
+    {
+        return status;
+    }
 
-    bool BatteryDriver::isCharging() const { return charging; }
-
-    int BatteryDriver::level() const { return LV; }
+    int BatteryDriver::level() const
+    {
+        return LV;
+    }
 
     void BatteryDriver::setLevel(int level)
     {
