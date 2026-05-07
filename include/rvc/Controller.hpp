@@ -13,6 +13,7 @@ namespace rvc
     class MotorDriver;
     class ObstacleSensorDriver;
     class ObstacleProcessor;
+    class DustProcessor;
 
     enum class MotionState;
 
@@ -30,6 +31,7 @@ namespace rvc
         MotorDriver *motorDriver;
         ObstacleSensorDriver *obstacleSensorDriver;
         ObstacleProcessor *obstacleProcessor;
+        DustProcessor *dustProcessor;
 
         void enterMode(OperatingMode &nextMode);
         bool canStartCharging() const;

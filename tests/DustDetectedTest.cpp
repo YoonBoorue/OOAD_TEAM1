@@ -38,29 +38,25 @@ class StubOperatingMode : public OperatingMode
 {
 public:
     int dustDetectedCallCount = 0;
-    int timerExpiredCallCount = 0;
-    CleanerDriver *receivedCleaner = nullptr;
     OperatingMode *nextMode = nullptr;
 
     explicit StubOperatingMode(OperatingMode *next = nullptr)
         : nextMode(next == nullptr ? this : next) {}
 
     void checkIsMoving(Direction, MotorDriver &) const override {}
-    OperatingMode &startButtonPressed(MotorDriver &, CleanerDriver &) override { return *this; }
-    OperatingMode &lowBatteryDetected(MotorDriver &, CleanerDriver &) override { return *this; }
+    OperatingMode &startButtonPressed() override { return *this; }
+    OperatingMode &lowBatteryDetected(CleanerDriver &, MotorDriver &) override { return *this; }
     OperatingMode &lowBatteryCleared() override { return *this; }
-    OperatingMode &dustDetected(CleanerDriver &cleaner) override
+    OperatingMode &dustDetected() override
     {
         ++dustDetectedCallCount;
-        receivedCleaner = &cleaner;
         return *nextMode;
     }
     bool canCharge() const override { return false; }
-    OperatingMode &timerExpired(CleanerDriver &cleaner) override
-    {
-        ++timerExpiredCallCount;
-        return *this;
-    }
+    OperatingMode &timerExpired() override { return *this; }
+    void apply(CleanerDriver &, MotorDriver &) const override {}
+    ModeKind kind() const override { return ModeKind::Standby; }
+    const char *name() const override { return "StubMode"; }
 };
 
 class ControllerDustDetectedTest : public testing::Test
@@ -72,6 +68,7 @@ protected:
     void SetUp() override
     {
         controller.dustSensorDriver->dust = true;
+        controller.power = true;
     }
 
     void setRealMode(OperatingMode *mode)
@@ -135,15 +132,16 @@ TEST_F(ControllerDustDetectedTest, DelegatesToCurrentModeOnce)
 }
 
 // TC-05
-// 목적: Controller가 dustDetected에 자신의 CleanerDriver를 전달하는지 확인
-// 상황: stub mode 사용
+// 목적: dustDetected 호출 시 dust가 없으면 currentMode->dustDetected가 호출되지 않는지 확인
+// 상황: stub mode 사용, dust == false
 // 실행: Driver가 dustDetected 전달
-// 기대값: stub이 받은 cleaner 주소 == controller.cleanerDriver
-TEST_F(ControllerDustDetectedTest, PassesControllerCleanerDriverToCurrentMode)
+// 기대값: stub의 dustDetected 호출 0회
+TEST_F(ControllerDustDetectedTest, DoesNotDelegateWhenDustNotDetected)
 {
+    controller.dustSensorDriver->dust = false;
     auto *mode = setStubMode(new StubOperatingMode());
     driver.detectDust();
-    EXPECT_EQ(mode->receivedCleaner, controller.cleanerDriver);
+    EXPECT_EQ(mode->dustDetectedCallCount, 0);
 }
 
 // TC-06
