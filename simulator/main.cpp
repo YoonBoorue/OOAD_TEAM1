@@ -89,13 +89,14 @@ namespace
             << "  low-battery                       Trigger low battery detection\n"
             << "  clear-low-battery                 Clear low battery mode manually\n"
             << "  dust                              Trigger dust detection\n"
+            << "  timer-expired                     Fire timer expiry synchronously\n"
             << "  obstacle <front> <left> <right>   Trigger obstacle detection. 1/blocked, 0/clear\n"
             << "  expect <field> <value>            Assert state in CLI script\n"
             << "  exit                              Exit simulator\n"
             << "\n"
             << "Expect fields:\n"
             << "  power, charging, battery, hasMode, mode, dustSensor, obstacleSensor,\n"
-            << "  cleaner, cleanerMode, motor, motorForward\n"
+            << "  cleaner, cleanerMode, motor, motorForward, motorDirection\n"
             << "\n"
             << "Examples:\n"
             << "  rvc_simulator\n"
@@ -168,6 +169,17 @@ namespace
         if (field == "motorforward")
         {
             return boolText(controller.isMotorForward());
+        }
+        if (field == "motordirection")
+        {
+            switch (controller.motorDirection())
+            {
+            case rvc::Direction::FRONT: return "FRONT";
+            case rvc::Direction::LEFT:  return "LEFT";
+            case rvc::Direction::RIGHT: return "RIGHT";
+            case rvc::Direction::BACK:  return "BACK";
+            default:                    return "UNKNOWN";
+            }
         }
 
         knownField = false;
@@ -368,6 +380,14 @@ int main(int argc, char *argv[])
         {
             controller.dustDetected();
             std::cout << "OK dust\n";
+            printStatus(controller);
+            continue;
+        }
+
+        if (command == "timer-expired" || command == "timer_expired")
+        {
+            controller.timerExpiredNow();
+            std::cout << "OK timer-expired\n";
             printStatus(controller);
             continue;
         }

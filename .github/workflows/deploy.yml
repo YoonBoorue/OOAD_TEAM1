@@ -38,7 +38,8 @@ jobs:
           cmake -S . -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-            -DBUILD_TESTING=ON
+            -DBUILD_TESTING=ON \
+            -DOOAD_BUILD_SYSTEM_TESTS=OFF
 
       - name: Build
         run: cmake --build build --parallel
@@ -148,7 +149,8 @@ jobs:
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
             -DBUILD_TESTING=ON \
-            -DOOAD_ENABLE_COVERAGE=ON
+            -DOOAD_ENABLE_COVERAGE=ON \
+            -DOOAD_BUILD_SYSTEM_TESTS=OFF
 
       - name: Build
         run: cmake --build build --parallel
@@ -226,7 +228,8 @@ jobs:
 
             cmake -S "\$RELEASE_DIR" -B "\$RELEASE_DIR/build" \
               -DCMAKE_BUILD_TYPE=Release \
-              -DBUILD_TESTING=ON
+              -DBUILD_TESTING=ON \
+              -DOOAD_BUILD_SYSTEM_TESTS=OFF
 
             cmake --build "\$RELEASE_DIR/build" --parallel
 

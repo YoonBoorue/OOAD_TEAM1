@@ -279,4 +279,17 @@ namespace rvc
         return motorDriver->checkIsForward();
     }
 
+    Direction Controller::motorDirection() const
+    {
+        return motorDriver->currentDirection();
+    }
+
+    void Controller::timerExpiredNow()
+    {
+        if (power && currentMode != nullptr)
+        {
+            currentMode = &currentMode->timerExpired(*cleanerDriver);
+        }
+    }
+
 } // namespace rvc
