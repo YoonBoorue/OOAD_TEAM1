@@ -71,8 +71,8 @@ namespace rvc
 
     OperatingMode &StandbyMode::startButtonPressed(CleanerDriver &cleanerDriver, MotorDriver &motorDriver)
     {
-        motorDriver.stopMoving();
-        cleanerDriver.stopCleaning();
+        motorDriver.moveForward();
+        cleanerDriver.startCleaning();
         return normalMode();
     }
     OperatingMode &StandbyMode::lowBatteryDetected(CleanerDriver &cleanerDriver, MotorDriver &motorDriver)
@@ -96,8 +96,8 @@ namespace rvc
     }
     OperatingMode &NormalMode::startButtonPressed(CleanerDriver &cleanerDriver, MotorDriver &motorDriver)
     {
-        motorDriver.moveForward();
-        cleanerDriver.startCleaning();
+        motorDriver.stopMoving();
+        cleanerDriver.stopCleaning();
         cleanerDriver.decideSetting(false);
         return standbyMode();
     }
