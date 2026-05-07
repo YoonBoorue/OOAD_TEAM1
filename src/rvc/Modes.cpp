@@ -39,7 +39,7 @@ namespace rvc
         return *(new BoostMode());
     }
     bool NormalMode::canCharge() const { return false; }
-    OperatingMode &NormalMode::timerExpired(CleanerDriver &cleaner) {}
+    OperatingMode &NormalMode::timerExpired(CleanerDriver &cleaner) { return *this; }
 
     // --- BoostMode ---
     void BoostMode::checkIsMoving(Direction direction, MotorDriver &motor) const
@@ -77,6 +77,6 @@ namespace rvc
     OperatingMode &LowBatteryMode::lowBatteryCleared() { return *this; }
     OperatingMode &LowBatteryMode::dustDetected(CleanerDriver &cleaner) { return *this; }
     bool LowBatteryMode::canCharge() const { return false; }
-    OperatingMode &LowBatteryMode::timerExpired(CleanerDriver &cleaner) {}
+    OperatingMode &LowBatteryMode::timerExpired(CleanerDriver &cleaner) { return *this; }
 
 } // namespace rvc

@@ -73,11 +73,15 @@ namespace rvc
     {
         if (currentMode == nullptr) return;
 
-        bool isDusted = dustProcessor->decideIsDusted(*currentMode, *cleanerDriver);
+        bool hasDust = dustSensorDriver->hasDust();
+        bool isDusted = dustProcessor->decideIsDusted(hasDust, *currentMode, *cleanerDriver);
 
         if (isDusted) {
             currentMode = &currentMode->dustDetected(*cleanerDriver);
-            startTimer();
+
+            if (dynamic_cast<BoostMode *>(currentMode) != nullptr) {
+                startTimer();
+            }
         }
     }
 
