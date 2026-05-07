@@ -33,7 +33,6 @@ namespace rvc
 
         void enterMode(OperatingMode &nextMode);
         bool canStartCharging() const;
-        void performChargingStep();
 
     public:
         Controller();

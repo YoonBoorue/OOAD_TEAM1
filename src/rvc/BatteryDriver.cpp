@@ -43,15 +43,17 @@ namespace rvc
         updateStatus();
     }
 
-    void BatteryDriver::inclineLV()
+    bool BatteryDriver::inclineLV()
     {
         if (!charging)
         {
-            return;
+            return false;
         }
 
         LV = std::min(MaxLevel, LV + ChargeStep);
         updateStatus();
+
+        return true;
     }
 
     bool BatteryDriver::startCharging()

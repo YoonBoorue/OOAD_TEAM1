@@ -33,7 +33,7 @@ namespace rvc
 
         bool startCharging();
         void stopCharging();
-        void inclineLV();
+        bool inclineLV();
         void declineLV();
 
         /// TEST

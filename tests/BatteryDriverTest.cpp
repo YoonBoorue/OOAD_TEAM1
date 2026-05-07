@@ -43,8 +43,7 @@ TEST(BatteryDriverTest, InclineLevelWhileCharging)
     battery.setLevel(50);
     ASSERT_TRUE(battery.startCharging());
 
-    battery.inclineLV();
-
+    EXPECT_TRUE(battery.inclineLV());
     EXPECT_EQ(battery.level(), 60);
     EXPECT_TRUE(battery.isCharging());
 }

@@ -54,18 +54,6 @@ namespace rvc
         return currentMode != nullptr && currentMode->canCharge();
     }
 
-    void Controller::performChargingStep()
-    {
-        batteryDriver->inclineLV();
-
-        if (power && currentMode != nullptr &&
-            batteryDriver->level() > BatteryDriver::LowBatteryThreshold &&
-            !lowBatteryClearedEventSent)
-        {
-            lowBatteryCleared();
-        }
-    }
-
     bool Controller::startTimer()
     {
         // UC6 Adjust Boost Mode is intentionally left for the separate boost branch.
@@ -136,12 +124,18 @@ namespace rvc
 
     void Controller::chargingTick()
     {
-        if (!batteryDriver->isCharging())
+        if (!batteryDriver->inclineLV())
         {
             return;
         }
 
-        performChargingStep();
+        if (power &&
+            currentMode != nullptr &&
+            batteryDriver->level() > BatteryDriver::LowBatteryThreshold &&
+            !lowBatteryClearedEventSent)
+        {
+            lowBatteryCleared();
+        }
     }
 
     void Controller::lowBatteryDetected()
