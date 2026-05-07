@@ -23,31 +23,21 @@ namespace rvc
           cleanerDriver(new CleanerDriver()),
           dustSensorDriver(new DustSensorDriver()),
           motorDriver(new MotorDriver()),
-          dustProcessor(new DustProcessor()),
           obstacleSensorDriver(new ObstacleSensorDriver()),
-          obstacleProcessor(new ObstacleProcessor()) {}
+          obstacleProcessor(new ObstacleProcessor()),
+          dustProcessor(new DustProcessor()) {}
 
     Controller::~Controller()
     {
-        delete batteryDriver;
-        delete cleanerDriver;
-        delete dustSensorDriver;
-        delete motorDriver;
         delete dustProcessor;
-        delete obstacleSensorDriver;
         delete obstacleProcessor;
+        delete obstacleSensorDriver;
+        delete motorDriver;
+        delete dustSensorDriver;
+        delete cleanerDriver;
+        delete batteryDriver;
 
         // currentMode is not deleted because it points to a static mode singleton.
-    }
-
-    void Controller::enterMode(OperatingMode &nextMode)
-    {
-        currentMode = &nextMode;
-
-        // Cleaner/Motor commands are delegated to Mode.
-        // Controller touches Cleaner/Motor directly only in power on/off sequences.
-        if (power)
-            currentMode->apply(*cleanerDriver, *motorDriver);
     }
 
     bool Controller::canStartCharging() const
@@ -62,12 +52,13 @@ namespace rvc
 
     bool Controller::startTimer()
     {
-        std::thread([this]() {
+        std::thread([this]()
+                    {
             std::this_thread::sleep_for(std::chrono::seconds(5));
             if (currentMode != nullptr) {
-                currentMode = &currentMode->timerExpired(); 
-            }
-        }).detach();
+                currentMode = &currentMode->timerExpired(*cleanerDriver); 
+            } })
+            .detach();
         return true;
     }
 
@@ -106,12 +97,12 @@ namespace rvc
 
     void Controller::startButtonPressed()
     {
-        if (!power || currentMode == nullptr || isNowCharging)
+        if (currentMode == nullptr || isNowCharging)
         {
             return;
         }
 
-        enterMode(currentMode->startButtonPressed());
+        currentMode = &currentMode->startButtonPressed(*cleanerDriver, *motorDriver);
     }
 
     void Controller::chargeBattery()
@@ -192,14 +183,16 @@ namespace rvc
 
     void Controller::dustDetected()
     {
-        if (!power || currentMode == nullptr) return;
+        if (!power || currentMode == nullptr || isNowCharging)
+        {
+            return;
+        }
 
-        bool hasDust = dustSensorDriver->hasDust();
-        if (hasDust) {
-            enterMode(currentMode->dustDetected());
-            if (dynamic_cast<BoostMode *>(currentMode) != nullptr) {
-                startTimer();
-            }
+        currentMode = &dustProcessor->decideIsDusted(*cleanerDriver, *currentMode);
+
+        if (currentMode->kind() == ModeKind::Boost)
+        {
+            startTimer();
         }
     }
 

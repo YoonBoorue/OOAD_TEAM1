@@ -8,7 +8,7 @@ namespace rvc
     class DustProcessor
     {
     public:
-        bool decideIsDusted(bool dust, const OperatingMode &currentMode, CleanerDriver &cleaner);
+        OperatingMode &decideIsDusted(CleanerDriver &cleaner, OperatingMode &currentMode);
     };
 
 } // namespace rvc
