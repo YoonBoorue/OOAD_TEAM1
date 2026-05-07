@@ -98,7 +98,6 @@ namespace rvc
     {
         motorDriver.stopMoving();
         cleanerDriver.stopCleaning();
-        cleanerDriver.decideSetting(false);
         return standbyMode();
     }
     OperatingMode &NormalMode::lowBatteryDetected(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) { return enterLowBatteryMode(cleanerDriver, motorDriver); }
@@ -122,16 +121,19 @@ namespace rvc
     void BoostMode::checkIsMoving(Direction direction, MotorDriver &motorDriver) const { moveByDirection(direction, motorDriver); }
     OperatingMode &BoostMode::startButtonPressed(CleanerDriver &cleanerDriver, MotorDriver &motorDriver)
     {
-        motorDriver.moveForward();
-        cleanerDriver.startCleaning();
-        cleanerDriver.decideSetting(true);
+        motorDriver.stopMoving();
+        cleanerDriver.stopCleaning();
         return standbyMode();
     }
     OperatingMode &BoostMode::lowBatteryDetected(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) { return enterLowBatteryMode(cleanerDriver, motorDriver); }
     OperatingMode &BoostMode::lowBatteryCleared() { return boostMode(); }
     OperatingMode &BoostMode::dustDetected(CleanerDriver &) { return boostMode(); }
     bool BoostMode::canCharge() const { return false; }
-    OperatingMode &BoostMode::timerExpired(CleanerDriver &) { return normalMode(); }
+    OperatingMode &BoostMode::timerExpired(CleanerDriver &cleanerDriver)
+    {
+        cleanerDriver.decideSetting(false);
+        return normalMode();
+    }
 
     ModeKind BoostMode::kind() const { return ModeKind::Boost; }
     const char *BoostMode::name() const { return "BoostMode"; }

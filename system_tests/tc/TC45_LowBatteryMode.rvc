@@ -1,0 +1,36 @@
+# TC45: LowBatteryMode - recovery then start
+# Precondition: LowBatteryMode, charge until battery exceeds threshold → StandbyMode
+# Action: press start button (StandbyMode → NormalMode), then trigger low battery again
+# Expected: StandbyMode → NormalMode → LowBatteryMode transition chain
+battery 5
+power
+low-battery
+expect power on
+expect mode LowBatteryMode
+expect battery 5
+expect motor stopped
+expect cleaner off
+charge
+expect power on
+expect charging on
+expect battery 15
+expect mode StandbyMode
+expect motor stopped
+expect cleaner off
+stop-charge
+expect charging off
+start
+expect power on
+expect mode NormalMode
+expect motor moving
+expect motorForward true
+expect cleaner on
+expect cleanerMode normal
+low-battery
+expect power on
+expect mode LowBatteryMode
+expect motor stopped
+expect motorForward false
+expect cleaner off
+expect cleanerMode off
+exit

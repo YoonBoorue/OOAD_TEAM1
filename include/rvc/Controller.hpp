@@ -75,7 +75,9 @@ namespace rvc
         std::string cleanerMode() const;
         bool isMotorMoving() const;
         bool isMotorForward() const;
+        Direction motorDirection() const;
         void setBatteryLevel(int level);
+        void timerExpiredNow();
     };
 
 }
