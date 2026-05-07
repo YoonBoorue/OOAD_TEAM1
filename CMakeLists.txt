@@ -8,7 +8,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 option(OOAD_ENABLE_COVERAGE "Enable coverage flags" OFF)
 
 add_library(ooad_core
-    src/rvc/RobotController.cpp
     src/rvc/DustProcessor.cpp
     src/rvc/ObstacleProcessor.cpp
     src/rvc/Modes.cpp
@@ -70,9 +69,12 @@ if (BUILD_TESTING)
 
     FetchContent_MakeAvailable(googletest)
 
+    file(GLOB_RECURSE OOAD_TEST_SOURCES CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp 
+    )
+
     add_executable(ooad_tests
-        tests/RobotControllerTest.cpp
-        tests/StartButtonPressedTest.cpp
+        ${OOAD_TEST_SOURCES}
     )
 
     target_link_libraries(ooad_tests

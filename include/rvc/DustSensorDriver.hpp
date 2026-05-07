@@ -1,15 +1,21 @@
 #pragma once
 
-namespace rvc {
+namespace rvc
+{
 
-class DustSensorDriver {
-private:
-    bool dust;
+    class DustSensorDriver
+    {
+    private:
+        bool dust;
+        bool active;
 
-public:
-    DustSensorDriver();
-    void initialize();
-    void deactivateDustSensor();
-};
+    public:
+        DustSensorDriver();
+        void initialize();
+        void deactivateDustSensor();
+
+        bool isActive() const;
+        bool isDustDetected() const;
+    };
 
 }
