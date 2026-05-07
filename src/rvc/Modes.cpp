@@ -9,7 +9,7 @@ namespace rvc
     {
         motor.moveForward();
         cleaner.startCleaning();
-        return *this;
+        return *(new NormalMode());
     }
     OperatingMode &StandbyMode::lowBatteryDetected(MotorDriver & /*motor*/, CleanerDriver & /*cleaner*/) { return *this; }
     OperatingMode &StandbyMode::lowBatteryCleared() { return *this; }

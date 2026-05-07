@@ -126,19 +126,19 @@ TEST_F(ControllerStartButtonPressedTest, StandbyModeStartsCleanerWhenStartButton
     EXPECT_EQ(controller.cleanerDriver->mode, "normal");
 }
 
-TEST_F(ControllerStartButtonPressedTest, StandbyModeKeepsCurrentModeAfterStartButtonPressed)
+TEST_F(ControllerStartButtonPressedTest, StandbyModeChangesToNormalModeWhenStartButtonPressed)
 {
     // TC-03
-    // 목적: 실제 StandbyMode 반환값이 currentMode에 반영된 뒤에도 StandbyMode 유지 확인
+    // 목적: SD-02의 Set Cleaning Mode 결과로 currentMode가 NormalMode인지 확인
     // 상황: currentMode는 실제 StandbyMode, 로봇은 충전 중 아님
     // 실행: Driver가 Start Button 입력 전달
-    // 기대값: currentMode 포인터는 기존 StandbyMode 객체 그대로 유지
-    auto *mode = setRealMode(new StandbyMode());
+    // 기대값: controller.currentMode는 NormalMode 타입
+    setRealMode(new StandbyMode());
     setCharging(false);
 
     driver.pressStartButton();
 
-    EXPECT_EQ(controller.currentMode, mode);
+    EXPECT_NE(dynamic_cast<NormalMode *>(controller.currentMode), nullptr);
 }
 
 TEST_F(ControllerStartButtonPressedTest, ChargingBlocksMoveForwardInRealStandbyMode)
