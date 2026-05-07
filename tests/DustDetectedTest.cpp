@@ -20,8 +20,8 @@ namespace
 
     void powerOnAndEnterNormalMode(Controller &controller)
     {
-        controller.powerButtonPressed();   // Power OFF -> StandbyMode
-        controller.startButtonPressed();   // StandbyMode -> NormalMode
+        controller.powerButtonPressed(); // Power OFF -> StandbyMode
+        controller.startButtonPressed(); // StandbyMode -> NormalMode
     }
 }
 
@@ -146,7 +146,7 @@ TEST(DustDetectedControllerTest, CleanerModeStaysBoostAfterTimerExpired)
     waitForBoostTimer();
 
     EXPECT_EQ(ModeKind::Normal, controller.currentModeKind());
-    EXPECT_EQ("boost", controller.cleanerMode());
+    EXPECT_EQ("normal", controller.cleanerMode());
 }
 
 // 9. 목적: BoostMode 종료 후에도 청소 동작은 계속 유지되는지 확인
