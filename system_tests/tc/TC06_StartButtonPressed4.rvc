@@ -1,0 +1,13 @@
+# TC6: StartButtonPressed4
+# Precondition setup: NormalMode
+power
+start
+expect mode NormalMode
+# Action: press start button once
+start
+expect power on
+expect mode StandbyMode
+expect motor stopped
+expect cleaner off
+expect cleanerMode off
+exit

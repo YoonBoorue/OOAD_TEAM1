@@ -1,0 +1,20 @@
+# TC15: LowBatteryDetected1
+# Precondition: NormalMode, cleaning in progress
+# Action: detect battery level below threshold
+# Expected: enter LowBatteryMode, cleaner and motor deactivate
+power
+start
+expect power on
+expect mode NormalMode
+expect cleaner on
+expect motor moving
+battery 5
+low-battery
+expect power on
+expect mode LowBatteryMode
+expect battery 5
+expect motor stopped
+expect motorForward false
+expect cleaner off
+expect cleanerMode off
+exit

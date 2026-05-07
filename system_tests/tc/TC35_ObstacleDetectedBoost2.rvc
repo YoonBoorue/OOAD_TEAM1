@@ -1,0 +1,21 @@
+# TC35 : ObstacleDetectedBoost2
+# Related normal-mode case : TC25_ObstacleDetected2
+# Precondition : BoostMode, forward=true
+# Action : left obstacle detected, front/right clear
+# Expected : BoostMode 유지, CleanerDriver mode=boost 유지, no direction change
+power
+start
+dust
+expect mode BoostMode
+expect cleaner on
+expect cleanerMode boost
+expect motorForward true
+expect motorDirection FRONT
+obstacle 0 1 0
+expect mode BoostMode
+expect cleaner on
+expect cleanerMode boost
+expect motor moving
+expect motorForward true
+expect motorDirection FRONT
+exit

@@ -1,0 +1,12 @@
+# TC1: PowerButtonPressed1
+# Precondition: power off
+# Action: press power button once
+power
+expect power on
+expect mode StandbyMode
+expect motor stopped
+expect cleaner off
+expect dustSensor active
+expect obstacleSensor active
+expect battery 100
+exit

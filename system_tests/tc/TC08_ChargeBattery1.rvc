@@ -1,0 +1,17 @@
+# TC8: ChargeBattery1
+# Precondition setup: power ON, StandbyMode, battery below full
+# Action: start charging
+power
+battery 50
+expect power on
+expect mode StandbyMode
+expect charging off
+expect battery 50
+charge
+expect power on
+expect mode StandbyMode
+expect charging on
+expect battery 60
+expect motor stopped
+expect cleaner off
+exit

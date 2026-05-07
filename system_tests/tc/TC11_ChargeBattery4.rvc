@@ -1,0 +1,20 @@
+# TC11: ChargeBattery4
+# Precondition setup: power ON, LowBatteryMode, battery below threshold
+# Action: start charging
+# Expected: charging starts and battery increases.
+# Current implementation clears LowBatteryMode to StandbyMode after one charge tick if battery > threshold.
+power
+battery 5
+low-battery
+expect power on
+expect mode LowBatteryMode
+expect battery 5
+expect motor stopped
+expect cleaner off
+charge
+expect charging on
+expect battery 15
+expect mode StandbyMode
+expect motor stopped
+expect cleaner off
+exit

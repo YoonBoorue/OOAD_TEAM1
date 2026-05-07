@@ -33,7 +33,6 @@ namespace rvc
         ObstacleProcessor *obstacleProcessor;
         DustProcessor *dustProcessor;
 
-        void enterMode(OperatingMode &nextMode);
         bool canStartCharging() const;
 
     public:

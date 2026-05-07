@@ -15,13 +15,12 @@ namespace rvc
     public:
         void checkIsMoving(Direction direction, MotorDriver &motorDriver) const override;
 
-        OperatingMode &startButtonPressed() override;
+        OperatingMode &startButtonPressed(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) override;
         OperatingMode &lowBatteryDetected(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) override;
         OperatingMode &lowBatteryCleared() override;
-        OperatingMode &dustDetected() override;
+        OperatingMode &dustDetected(CleanerDriver &cleanerDriver) override;
+        OperatingMode &timerExpired(CleanerDriver &cleanerDriver) override;
         bool canCharge() const override;
-        OperatingMode &timerExpired() override;
-        void apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) const override;
         ModeKind kind() const override;
         const char *name() const override;
     };
@@ -31,13 +30,12 @@ namespace rvc
     public:
         void checkIsMoving(Direction direction, MotorDriver &motorDriver) const override;
 
-        OperatingMode &startButtonPressed() override;
+        OperatingMode &startButtonPressed(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) override;
         OperatingMode &lowBatteryDetected(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) override;
         OperatingMode &lowBatteryCleared() override;
-        OperatingMode &dustDetected() override;
+        OperatingMode &dustDetected(CleanerDriver &cleanerDriver) override;
+        OperatingMode &timerExpired(CleanerDriver &cleanerDriver) override;
         bool canCharge() const override;
-        OperatingMode &timerExpired() override;
-        void apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) const override;
         ModeKind kind() const override;
         const char *name() const override;
     };
@@ -47,13 +45,12 @@ namespace rvc
     public:
         void checkIsMoving(Direction direction, MotorDriver &motorDriver) const override;
 
-        OperatingMode &startButtonPressed() override;
+        OperatingMode &startButtonPressed(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) override;
         OperatingMode &lowBatteryDetected(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) override;
         OperatingMode &lowBatteryCleared() override;
-        OperatingMode &dustDetected() override;
+        OperatingMode &dustDetected(CleanerDriver &cleanerDriver) override;
+        OperatingMode &timerExpired(CleanerDriver &cleanerDriver) override;
         bool canCharge() const override;
-        OperatingMode &timerExpired() override;
-        void apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) const override;
         ModeKind kind() const override;
         const char *name() const override;
     };
@@ -63,13 +60,12 @@ namespace rvc
     public:
         void checkIsMoving(Direction direction, MotorDriver &motorDriver) const override;
 
-        OperatingMode &startButtonPressed() override;
+        OperatingMode &startButtonPressed(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) override;
         OperatingMode &lowBatteryDetected(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) override;
         OperatingMode &lowBatteryCleared() override;
-        OperatingMode &dustDetected() override;
+        OperatingMode &dustDetected(CleanerDriver &cleanerDriver) override;
+        OperatingMode &timerExpired(CleanerDriver &cleanerDriver) override;
         bool canCharge() const override;
-        OperatingMode &timerExpired() override;
-        void apply(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) const override;
         ModeKind kind() const override;
         const char *name() const override;
     };
