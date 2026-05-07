@@ -111,8 +111,7 @@ namespace rvc
             return;
         }
 
-        batteryDriver->startCharging();
-        isNowCharging = true;
+        isNowCharging = batteryDriver->startCharging();
 
         if (!isNowCharging)
         {

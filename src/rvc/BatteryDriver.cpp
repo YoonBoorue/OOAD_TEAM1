@@ -47,9 +47,10 @@ namespace rvc
         return LV > previousLevel;
     }
 
-    void BatteryDriver::startCharging()
+    bool BatteryDriver::startCharging()
     {
         updateStatus();
+        return !status;
     }
 
     void BatteryDriver::stopCharging()

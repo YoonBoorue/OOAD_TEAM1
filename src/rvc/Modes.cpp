@@ -90,7 +90,10 @@ namespace rvc
 
     // --- NormalMode ---
 
-    void NormalMode::checkIsMoving(Direction direction, MotorDriver &motorDriver) const { moveByDirection(direction, motorDriver); }
+    void NormalMode::checkIsMoving(Direction direction, MotorDriver &motorDriver) const
+    {
+        moveByDirection(direction, motorDriver);
+    }
     OperatingMode &NormalMode::startButtonPressed() { return standbyMode(); }
     OperatingMode &NormalMode::lowBatteryDetected(CleanerDriver &cleanerDriver, MotorDriver &motorDriver) { return enterLowBatteryMode(cleanerDriver, motorDriver); }
     OperatingMode &NormalMode::lowBatteryCleared() { return normalMode(); }
