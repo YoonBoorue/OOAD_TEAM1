@@ -42,12 +42,11 @@ namespace rvc
 
     bool Controller::canStartCharging() const
     {
-        if (!power)
-        {
-            return true;
-        }
 
-        return currentMode != nullptr && currentMode->canCharge();
+        if (power)
+            return currentMode->canCharge();
+        else
+            return true;
     }
 
     bool Controller::startTimer()
@@ -154,7 +153,7 @@ namespace rvc
     void Controller::lowBatteryDetected()
     {
         // SD-15 Enter Low Battery Mode
-        if (!power || currentMode == nullptr)
+        if (currentMode == nullptr)
         {
             return;
         }
@@ -165,7 +164,7 @@ namespace rvc
 
     void Controller::lowBatteryCleared()
     {
-        if (!power || currentMode == nullptr)
+        if (currentMode == nullptr)
         {
             return;
         }
@@ -183,7 +182,7 @@ namespace rvc
 
     void Controller::dustDetected()
     {
-        if (!power || currentMode == nullptr || isNowCharging)
+        if (currentMode == nullptr || isNowCharging)
         {
             return;
         }
@@ -198,7 +197,7 @@ namespace rvc
 
     void Controller::obstacleDetected(const bool direction[3])
     {
-        if (!power || currentMode == nullptr || direction == nullptr)
+        if (currentMode == nullptr || direction == nullptr)
         {
             return;
         }
@@ -210,6 +209,10 @@ namespace rvc
 
         obstacleProcessor->decideDirection(dir, *currentMode, *motorDriver);
     }
+
+    //////////////////////////////////////////////////////////////
+    // tests
+    //////////////////////////////////////////////////////////////
 
     bool Controller::isPowerOn() const
     {
@@ -245,10 +248,6 @@ namespace rvc
     {
         batteryDriver->setLevel(level);
     }
-
-    //////////////////////////////////////////////////////////////
-    // tests
-    //////////////////////////////////////////////////////////////
 
     bool Controller::isDustSensorActive() const
     {
