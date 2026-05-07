@@ -80,6 +80,7 @@ namespace rvc
 
         // SD-11 TURN OFF SYSTEM
         power = false;
+        isNowCharging = false;
 
         batteryDriver->turnOffBattery();
         obstacleSensorDriver->deactivateObstacleSensor();
@@ -94,7 +95,7 @@ namespace rvc
 
     void Controller::startButtonPressed()
     {
-        if (!power || currentMode == nullptr)
+        if (!power || currentMode == nullptr || isNowCharging)
         {
             return;
         }
@@ -110,7 +111,8 @@ namespace rvc
             return;
         }
 
-        isNowCharging = batteryDriver->startCharging();
+        batteryDriver->startCharging();
+        isNowCharging = true;
 
         if (!isNowCharging)
         {
@@ -175,6 +177,7 @@ namespace rvc
     {
         // SD-16 Stop Charging
         batteryDriver->stopCharging();
+        isNowCharging = false;
     }
 
     void Controller::dustDetected()

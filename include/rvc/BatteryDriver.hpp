@@ -27,7 +27,7 @@ namespace rvc
         void initialize();
         void turnOffBattery();
 
-        bool startCharging();
+        void startCharging();
         void stopCharging();
         bool inclineLV();
         void declineLV();

@@ -47,12 +47,9 @@ namespace rvc
         return LV > previousLevel;
     }
 
-    bool BatteryDriver::startCharging()
+    void BatteryDriver::startCharging()
     {
         updateStatus();
-
-        // SD-10: [status = F]일 때 충전 가능
-        return !status;
     }
 
     void BatteryDriver::stopCharging()
