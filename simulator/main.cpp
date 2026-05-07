@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "rvc/Controller.hpp"
+#include "rvc/Modes.hpp"
 
 namespace
 {
@@ -213,29 +214,264 @@ namespace
         return line;
     }
 
+    // ─────────────────────────────────────────
+    // Interactive menu helpers
+    // ─────────────────────────────────────────
+
+    void printMenuStatus(const rvc::Controller &controller)
+    {
+        std::cout << "-----------------------------------\n";
+        std::cout << "  Mode    : " << controller.currentModeName() << "\n";
+        std::cout << "  Battery : " << controller.batteryLevel() << "%";
+        if (controller.isCharging()) { std::cout << " (Charging)"; }
+        std::cout << "\n";
+        if (controller.isMotorMoving())
+        {
+            const std::string dirStr = [&]() -> std::string {
+                switch (controller.motorDirection()) {
+                    case rvc::Direction::FRONT: return "FRONT";
+                    case rvc::Direction::LEFT:  return "LEFT";
+                    case rvc::Direction::RIGHT: return "RIGHT";
+                    case rvc::Direction::BACK:  return "BACK";
+                    default:                    return "UNKNOWN";
+                }
+            }();
+            std::cout << "  Motor   : " << dirStr
+                      << " / " << (controller.isMotorForward() ? "Forward" : "Backward") << "\n";
+        }
+        else
+        {
+            std::cout << "  Motor   : Stopped\n";
+        }
+        std::cout << "  Cleaner : " << controller.cleanerMode() << "\n";
+        std::cout << "-----------------------------------\n";
+    }
+
+    void handlePower(rvc::Controller &controller)
+    {
+        bool wasPowerOn = controller.isPowerOn();
+        controller.powerButtonPressed();
+
+        if (!wasPowerOn)
+        {
+            std::cout << "[System] Power On → " << controller.currentModeName() << "\n";
+        }
+        else
+        {
+            std::cout << "[System] Power Off\n";
+        }
+    }
+
+    void handleStart(rvc::Controller &controller)
+    {
+        if (!controller.isPowerOn())
+        {
+            std::cout << "[System] Cannot start: Power is off\n";
+            return;
+        }
+        if (controller.isCharging())
+        {
+            std::cout << "[System] Cannot start: Charging in progress\n";
+            return;
+        }
+
+        bool wasCleaning = controller.isCleanerCleaning();
+        controller.startButtonPressed();
+
+        std::cout << "[System] Start Button → " << controller.currentModeName() << "\n";
+        if (!wasCleaning && controller.isCleanerCleaning())
+        {
+            std::cout << "[Cleaner] Start Cleaning...\n";
+            std::cout << "[Motor] Move Forward\n";
+        }
+        else if (wasCleaning && !controller.isCleanerCleaning())
+        {
+            std::cout << "[Cleaner] Stop Cleaning\n";
+            std::cout << "[Motor] Stopped\n";
+        }
+        else
+        {
+            std::cout << "[System] No change in current mode\n";
+        }
+    }
+
+    void handleDust(rvc::Controller &controller)
+    {
+        if (!controller.isPowerOn())
+        {
+            std::cout << "[Dust] No effect: Power is off\n";
+            return;
+        }
+
+        bool wasBoost = (controller.currentModeKind() == rvc::ModeKind::Boost);
+        controller.dustDetected();
+
+        if (controller.currentModeKind() == rvc::ModeKind::Boost && !wasBoost)
+        {
+            std::cout << "[Dust Detected] → BoostMode\n";
+            std::cout << "[Cleaner] Boost Cleaning for 5 sec...\n";
+        }
+        else if (controller.currentModeKind() == rvc::ModeKind::Boost)
+        {
+            std::cout << "[Dust Detected] Already in BoostMode\n";
+        }
+        else
+        {
+            std::cout << "[Dust] No effect in current mode (" << controller.currentModeName() << ")\n";
+        }
+    }
+
+    void handleLowBattery(rvc::Controller &controller)
+    {
+        if (!controller.isPowerOn())
+        {
+            std::cout << "[Battery] No effect: Power is off\n";
+            return;
+        }
+
+        bool wasCleaning = controller.isCleanerCleaning();
+        bool wasMoving   = controller.isMotorMoving();
+        controller.lowBatteryDetected();
+
+        std::cout << "[Battery] Low Battery Detected! → " << controller.currentModeName() << "\n";
+        if (wasCleaning && !controller.isCleanerCleaning())
+        {
+            std::cout << "[Cleaner] Stop Cleaning\n";
+        }
+        if (wasMoving && !controller.isMotorMoving())
+        {
+            std::cout << "[Motor] Stopped\n";
+        }
+    }
+
+    void handleObstacle(rvc::Controller &controller)
+    {
+        if (!controller.isPowerOn())
+        {
+            std::cout << "[Obstacle] No effect: Power is off\n";
+            return;
+        }
+
+        std::cout << "  Input [front,left,right] (e.g. [1,0,0]): ";
+        std::string token;
+        if (!(std::cin >> token)) { return; }
+
+        // strip brackets
+        for (char &c : token) { if (c == '[' || c == ']') { c = ' '; } }
+        std::replace(token.begin(), token.end(), ',', ' ');
+
+        std::istringstream iss(token);
+        int f = 0, l = 0, r = 0;
+        if (!(iss >> f >> l >> r))
+        {
+            std::cout << "[Error] Invalid format. Use [front,left,right] e.g. [1,0,0]\n";
+            return;
+        }
+
+        bool dir[3] = { f != 0, l != 0, r != 0 };
+
+        std::cout << "\n[Obstacle Detected]"
+                  << " front=" << (dir[0] ? "blocked" : "clear")
+                  << " left="  << (dir[1] ? "blocked" : "clear")
+                  << " right=" << (dir[2] ? "blocked" : "clear") << "\n";
+
+        controller.obstacleDetected(dir);
+
+        const std::string dirStr = [&]() -> std::string {
+            switch (controller.motorDirection()) {
+                case rvc::Direction::FRONT: return "FRONT";
+                case rvc::Direction::LEFT:  return "LEFT";
+                case rvc::Direction::RIGHT: return "RIGHT";
+                case rvc::Direction::BACK:  return "BACK";
+                default:                    return "UNKNOWN";
+            }
+        }();
+
+        std::cout << "[Motor] Direction: " << dirStr
+                  << ", Forward: " << (controller.isMotorForward() ? "true" : "false") << "\n";
+    }
+
+    void handleCharge(rvc::Controller &controller)
+    {
+        int prevLevel = controller.batteryLevel();
+        controller.chargeBattery();
+
+        if (controller.batteryLevel() > prevLevel)
+        {
+            std::cout << "[Battery] Charging... " << prevLevel << "% → "
+                      << controller.batteryLevel() << "%\n";
+            if (controller.batteryLevel() == 100)
+            {
+                std::cout << "[Battery] Fully Charged!\n";
+            }
+        }
+        else
+        {
+            std::cout << "[Battery] Cannot charge in current mode ("
+                      << controller.currentModeName() << ")\n";
+        }
+    }
+
+    void runInteractiveMenu(rvc::Controller &controller)
+    {
+        std::cout << "\n======= RVC Simulator =======\n";
+
+        while (true)
+        {
+            std::cout << "\n";
+            printMenuStatus(controller);
+            std::cout << "\n";
+            std::cout << "1. Power " << (controller.isPowerOn() ? "Off" : "On") << "\n";
+            std::cout << "2. " << (controller.isCleanerCleaning() ? "Stop" : "Start") << " Cleaning\n";
+            std::cout << "3. Dust Detected\n";
+            std::cout << "4. Low Battery\n";
+            std::cout << "5. Charge Battery\n";
+            std::cout << "6. Obstacle Detected\n";
+            std::cout << "0. Exit\n";
+            std::cout << "Select: ";
+
+            int choice;
+            if (!(std::cin >> choice)) { break; }
+
+            std::cout << "\n";
+
+            switch (choice)
+            {
+            case 0: return;
+            case 1: handlePower(controller);      break;
+            case 2: handleStart(controller);      break;
+            case 3: handleDust(controller);       break;
+            case 4: handleLowBattery(controller); break;
+            case 5: handleCharge(controller);     break;
+            case 6: handleObstacle(controller);   break;
+            default:
+                std::cout << "[Error] Please enter 0-6.\n";
+                break;
+            }
+        }
+    }
+
 } // namespace
 
 int main(int argc, char *argv[])
 {
-    std::ifstream scriptFile;
-    std::istream *input = &std::cin;
+    // ── Interactive menu mode (no script file) ──────────────────────────
+    if (argc < 2)
+    {
+        rvc::Controller controller;
+        runInteractiveMenu(controller);
+        return EXIT_SUCCESS;
+    }
 
-    if (argc >= 2)
+    // ── Script file mode (system tests) ─────────────────────────────────
+    std::ifstream scriptFile(argv[1]);
+    if (!scriptFile.is_open())
     {
-        scriptFile.open(argv[1]);
-        if (!scriptFile.is_open())
-        {
-            std::cerr << "[ERROR] Cannot open script file: " << argv[1] << '\n';
-            return EXIT_FAILURE;
-        }
-        input = &scriptFile;
-        std::cout << "RVC Simulator CLI script=" << argv[1] << '\n';
+        std::cerr << "[ERROR] Cannot open script file: " << argv[1] << '\n';
+        return EXIT_FAILURE;
     }
-    else
-    {
-        std::cout << "RVC Simulator CLI interactive mode\n";
-        std::cout << "Type 'help' for commands. Lines beginning with # are ignored.\n";
-    }
+    std::istream *input = &scriptFile;
+    std::cout << "RVC Simulator CLI script=" << argv[1] << '\n';
 
     rvc::Controller controller;
     bool failed = false;
@@ -256,10 +492,7 @@ int main(int argc, char *argv[])
             continue;
         }
 
-        if (argc >= 2)
-        {
-            std::cout << "COMMAND line=" << lineNo << " input=\"" << originalLine << "\"\n";
-        }
+        std::cout << "COMMAND line=" << lineNo << " input=\"" << originalLine << "\"\n";
 
         const std::string command = toLower(tokens[0]);
 
