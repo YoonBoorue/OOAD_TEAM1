@@ -31,12 +31,12 @@ namespace rvc
         void initialize();
         void turnOffBattery();
 
-        void startCharging();
+        bool startCharging();
         void stopCharging();
         void inclineLV();
         void declineLV();
 
-        bool canCharge() const;
+        /// TEST
         bool isLow() const;
         bool isFull() const;
         bool isCharging() const;

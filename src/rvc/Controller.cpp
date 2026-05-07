@@ -46,11 +46,6 @@ namespace rvc
 
     bool Controller::canStartCharging() const
     {
-        if (!batteryDriver->canCharge())
-        {
-            return false;
-        }
-
         if (!power)
         {
             return true;
@@ -130,7 +125,10 @@ namespace rvc
             return;
         }
 
-        batteryDriver->startCharging();
+        if (!batteryDriver->startCharging())
+        {
+            return;
+        }
 
         // One charging loop iteration. Repeated chargingTick() calls represent SD-10 loop.
         chargingTick();

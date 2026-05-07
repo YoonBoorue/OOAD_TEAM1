@@ -9,21 +9,21 @@ using namespace rvc;
 
 TEST(ModeTest, StandbyModeStartButtonChangesToNormalMode)
 {
-    const OperatingMode &nextMode = standbyMode().startButtonPressed();
+    OperatingMode &nextMode = standbyMode().startButtonPressed();
 
     EXPECT_EQ(nextMode.kind(), ModeKind::Normal);
 }
 
 TEST(ModeTest, NormalModeStartButtonChangesToStandbyMode)
 {
-    const OperatingMode &nextMode = normalMode().startButtonPressed();
+    OperatingMode &nextMode = normalMode().startButtonPressed();
 
     EXPECT_EQ(nextMode.kind(), ModeKind::Standby);
 }
 
 TEST(ModeTest, LowBatteryModeIgnoresStartButton)
 {
-    const OperatingMode &nextMode = lowBatteryMode().startButtonPressed();
+    OperatingMode &nextMode = lowBatteryMode().startButtonPressed();
 
     EXPECT_EQ(nextMode.kind(), ModeKind::LowBattery);
 }
@@ -74,7 +74,6 @@ TEST(ModeTest, StandbyModeApplyStopsMotorAndCleaner)
     motor.initialize();
 
     normalMode().apply(cleaner, motor);
-
     ASSERT_TRUE(cleaner.isCleaning());
     ASSERT_TRUE(motor.isMoving());
 
@@ -95,11 +94,10 @@ TEST(ModeTest, LowBatteryDetectedChangesToLowBatteryModeAndStopsMotorCleaner)
     motor.initialize();
 
     normalMode().apply(cleaner, motor);
-
     ASSERT_TRUE(cleaner.isCleaning());
     ASSERT_TRUE(motor.isMoving());
 
-    const OperatingMode &nextMode = normalMode().lowBatteryDetected(cleaner, motor);
+    OperatingMode &nextMode = normalMode().lowBatteryDetected(cleaner, motor);
 
     EXPECT_EQ(nextMode.kind(), ModeKind::LowBattery);
     EXPECT_FALSE(cleaner.isCleaning());
@@ -110,7 +108,7 @@ TEST(ModeTest, LowBatteryDetectedChangesToLowBatteryModeAndStopsMotorCleaner)
 
 TEST(ModeTest, LowBatteryClearedChangesToStandbyMode)
 {
-    const OperatingMode &nextMode = lowBatteryMode().lowBatteryCleared();
+    OperatingMode &nextMode = lowBatteryMode().lowBatteryCleared();
 
     EXPECT_EQ(nextMode.kind(), ModeKind::Standby);
 }

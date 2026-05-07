@@ -54,18 +54,18 @@ namespace rvc
         updateStatus();
     }
 
-    void BatteryDriver::startCharging()
+    bool BatteryDriver::startCharging()
     {
         updateStatus();
 
-        // status == true means full, so charging cannot start.
         if (status)
         {
             charging = false;
-            return;
+            return false;
         }
 
         charging = true;
+        return true;
     }
 
     void BatteryDriver::stopCharging()
@@ -73,8 +73,6 @@ namespace rvc
         charging = false;
         updateStatus();
     }
-
-    bool BatteryDriver::canCharge() const { return !status; }
 
     bool BatteryDriver::isLow() const { return LV <= LowBatteryThreshold; }
 

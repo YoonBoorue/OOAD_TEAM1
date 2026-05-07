@@ -60,6 +60,7 @@ namespace rvc
         void dustDetected();
         void obstacleDetected(const bool direction[3]);
 
+        /////////////////////////////////////////////////
         // Test / simulator accessors
         bool isPowerOn() const;
         bool isCharging() const;
@@ -67,7 +68,6 @@ namespace rvc
         bool hasCurrentMode() const;
         ModeKind currentModeKind() const;
         std::string currentModeName() const;
-
         // Simulator/test support
         bool isDustSensorActive() const;
         bool isObstacleSensorActive() const;
