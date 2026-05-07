@@ -10,6 +10,7 @@ namespace rvc
     {
     }
 
+    // 반복 사용 구문 private메서드화
     void BatteryDriver::updateStatus()
     {
         // status == true means full / not chargeable.

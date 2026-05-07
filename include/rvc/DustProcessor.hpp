@@ -4,12 +4,11 @@
 
 namespace rvc
 {
-
     // 먼지 감지 및 처리 결정
     class DustProcessor
     {
     public:
-        bool decideIsDusted(const OperatingMode &currentMode, CleanerDriver &cleaner);
+        OperatingMode &decideIsDusted(CleanerDriver &cleaner, OperatingMode &currentMode);
     };
 
 } // namespace rvc

@@ -1,0 +1,21 @@
+# TC18: LowBatteryCleared1
+# Precondition: LowBatteryMode, charging is in progress and battery recovers above safe threshold
+# Action: battery level becomes higher than the low-battery threshold during charging
+# Expected: StandbyMode
+power
+battery 5
+low-battery
+expect power on
+expect mode LowBatteryMode
+expect battery 5
+expect motor stopped
+expect cleaner off
+charge
+expect power on
+expect charging on
+expect battery 15
+expect mode StandbyMode
+expect motor stopped
+expect cleaner off
+expect cleanerMode off
+exit

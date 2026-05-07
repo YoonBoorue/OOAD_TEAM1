@@ -1,3 +1,6 @@
+#include <thread>
+#include <chrono>
+
 #include "rvc/Controller.hpp"
 
 #include "rvc/BatteryDriver.hpp"
@@ -7,7 +10,7 @@
 #include "rvc/MotorDriver.hpp"
 #include "rvc/ObstacleSensorDriver.hpp"
 #include "rvc/ObstacleProcessor.hpp"
-#include "rvc/ObstacleSensorDriver.hpp"
+#include "rvc/DustProcessor.hpp"
 
 namespace rvc
 {
@@ -21,29 +24,20 @@ namespace rvc
           dustSensorDriver(new DustSensorDriver()),
           motorDriver(new MotorDriver()),
           obstacleSensorDriver(new ObstacleSensorDriver()),
-          obstacleProcessor(new ObstacleProcessor()) {}
+          obstacleProcessor(new ObstacleProcessor()),
+          dustProcessor(new DustProcessor()) {}
 
     Controller::~Controller()
     {
-        delete batteryDriver;
-        delete cleanerDriver;
+        delete dustProcessor;
+        delete obstacleProcessor;
+        delete obstacleSensorDriver;
         delete motorDriver;
         delete dustSensorDriver;
-        delete motorDriver;
-        delete obstacleSensorDriver;
-        delete obstacleProcessor;
+        delete cleanerDriver;
+        delete batteryDriver;
 
         // currentMode is not deleted because it points to a static mode singleton.
-    }
-
-    void Controller::enterMode(OperatingMode &nextMode)
-    {
-        currentMode = &nextMode;
-
-        // Cleaner/Motor commands are delegated to Mode.
-        // Controller touches Cleaner/Motor directly only in power on/off sequences.
-        if (power)
-            currentMode->apply(*cleanerDriver, *motorDriver);
     }
 
     bool Controller::canStartCharging() const
@@ -58,8 +52,14 @@ namespace rvc
 
     bool Controller::startTimer()
     {
-        // UC6 Adjust Boost Mode is intentionally left for the separate boost branch.
-        return false;
+        std::thread([this]()
+                    {
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+            if (currentMode != nullptr) {
+                currentMode = &currentMode->timerExpired(*cleanerDriver); 
+            } })
+            .detach();
+        return true;
     }
 
     void Controller::powerButtonPressed()
@@ -97,12 +97,12 @@ namespace rvc
 
     void Controller::startButtonPressed()
     {
-        if (!power || currentMode == nullptr || isNowCharging)
+        if (currentMode == nullptr || isNowCharging)
         {
             return;
         }
 
-        enterMode(currentMode->startButtonPressed());
+        currentMode = &currentMode->startButtonPressed(*cleanerDriver, *motorDriver);
     }
 
     void Controller::chargeBattery()
@@ -183,7 +183,17 @@ namespace rvc
 
     void Controller::dustDetected()
     {
-        // UC6 Adjust Boost Mode is handled in another branch.
+        if (!power || currentMode == nullptr || isNowCharging)
+        {
+            return;
+        }
+
+        currentMode = &dustProcessor->decideIsDusted(*cleanerDriver, *currentMode);
+
+        if (currentMode->kind() == ModeKind::Boost)
+        {
+            startTimer();
+        }
     }
 
     void Controller::obstacleDetected(const bool direction[3])
@@ -236,7 +246,9 @@ namespace rvc
         batteryDriver->setLevel(level);
     }
 
+    //////////////////////////////////////////////////////////////
     // tests
+    //////////////////////////////////////////////////////////////
 
     bool Controller::isDustSensorActive() const
     {

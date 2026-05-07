@@ -1,0 +1,20 @@
+# TC13: StopCharging1
+# Precondition setup: charging in progress, battery will reach 100%
+# Action: automatic charging stop trigger by charging tick
+# Expected: isNowCharging=false and battery remains 100%.
+power
+battery 80
+charge
+expect power on
+expect mode StandbyMode
+expect charging on
+expect battery 90
+charge-tick
+expect charging off
+expect battery 100
+expect mode StandbyMode
+# additional tick must not increase over 100 or restart charging
+charge-tick
+expect charging off
+expect battery 100
+exit

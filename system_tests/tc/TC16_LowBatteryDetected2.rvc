@@ -1,0 +1,23 @@
+# TC16: LowBatteryDetected2
+# Precondition: BoostMode, cleaning in progress
+# Action: detect battery level below threshold
+# Expected: enter LowBatteryMode, cleaner and motor deactivate, CleanerDriver mode off
+# Note: BoostMode entry requires Controller::dustDetected() or equivalent boost PR implementation.
+power
+start
+dust
+expect power on
+expect mode BoostMode
+expect cleaner on
+expect cleanerMode boost
+expect motor moving
+battery 5
+low-battery
+expect power on
+expect mode LowBatteryMode
+expect battery 5
+expect motor stopped
+expect motorForward false
+expect cleaner off
+expect cleanerMode off
+exit

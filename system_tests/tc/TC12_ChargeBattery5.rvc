@@ -1,0 +1,17 @@
+# TC12: ChargeBattery5
+# Precondition setup: power OFF, battery below full
+# Action: start charging
+# Expected: charging starts even when power is off and battery increases.
+battery 50
+expect power off
+expect mode Off
+expect charging off
+expect battery 50
+charge
+expect power off
+expect mode Off
+expect charging on
+expect battery 60
+expect motor stopped
+expect cleaner off
+exit

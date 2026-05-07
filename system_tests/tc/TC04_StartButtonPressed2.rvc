@@ -1,0 +1,12 @@
+# TC4: StartButtonPressed2
+# Precondition: power off
+# Action: press start button once
+start
+expect power off
+expect mode Off
+expect motor stopped
+expect cleaner off
+expect dustSensor inactive
+expect obstacleSensor inactive
+expect battery 100
+exit

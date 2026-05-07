@@ -1,0 +1,38 @@
+name: OOI System Test
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  system-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DBUILD_TESTING=ON \
+            -DOOAD_BUILD_UNIT_TESTS=OFF \
+            -DOOAD_BUILD_SYSTEM_TESTS=ON
+
+      - name: Build simulator
+        run: cmake --build build --target rvc_simulator --parallel
+
+      - name: Run simulator-based system tests
+        run: ctest --test-dir build -L system --output-on-failure
+
+      - name: Upload system test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ooi-system-test-logs
+          path: |
+            build/Testing/**/*.log

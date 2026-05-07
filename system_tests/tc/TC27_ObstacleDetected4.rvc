@@ -1,0 +1,16 @@
+# TC27 : ObstacleDetected4
+# Precondition : NormalMode, forward=true
+# Action : right obstacle detected, front/left clear
+# Expected : no change, keep moving forward
+power
+start
+expect mode NormalMode
+expect motorForward true
+expect motorDirection FRONT
+obstacle 0 0 1
+expect mode NormalMode
+expect cleaner on
+expect motor moving
+expect motorForward true
+expect motorDirection FRONT
+exit

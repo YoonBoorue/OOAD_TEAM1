@@ -2,10 +2,8 @@
 
 namespace rvc
 {
-
-    bool DustProcessor::decideIsDusted(const OperatingMode & /*currentMode*/, CleanerDriver &cleaner)
+    OperatingMode &DustProcessor::decideIsDusted(CleanerDriver &cleaner, OperatingMode &currentMode)
     {
-        return false;
+        return currentMode.dustDetected(cleaner);
     }
-
-} // namespace rvc
+}
