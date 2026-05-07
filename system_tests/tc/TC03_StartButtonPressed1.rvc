@@ -1,0 +1,13 @@
+# TC3: StartButtonPressed1
+# Precondition setup: power on, StandbyMode
+power
+expect mode StandbyMode
+# Action: press start button once
+start
+expect power on
+expect mode NormalMode
+expect motor moving
+expect motorForward true
+expect cleaner on
+expect cleanerMode normal
+exit

@@ -1,0 +1,22 @@
+# TC42 : ObstacleDetectedBoost9
+# Related normal-mode case : TC32_ObstacleDetected9
+# Precondition : BoostMode, forward=false
+# Action : left + right obstacle detected, front clear
+# Expected : BoostMode 유지, CleanerDriver mode=boost 유지, no change from backward escape state
+power
+start
+dust
+expect mode BoostMode
+expect cleaner on
+expect cleanerMode boost
+obstacle 1 1 1
+expect mode BoostMode
+expect cleanerMode boost
+expect motorForward false
+obstacle 0 1 1
+expect mode BoostMode
+expect cleaner on
+expect cleanerMode boost
+expect motor moving
+expect motorForward false
+exit

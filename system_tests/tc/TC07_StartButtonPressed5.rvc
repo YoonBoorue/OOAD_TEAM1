@@ -1,0 +1,17 @@
+# TC7: StartButtonPressed5
+# Precondition setup: BoostMode
+# NOTE: This test requires Controller::dustDetected() to delegate to currentMode->dustDetected().
+power
+start
+dust
+expect mode BoostMode
+expect cleaner on
+expect cleanerMode boost
+# Action: press start button once
+start
+expect power on
+expect mode StandbyMode
+expect motor stopped
+expect cleaner off
+expect cleanerMode off
+exit

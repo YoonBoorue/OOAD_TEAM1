@@ -1,0 +1,21 @@
+# TC9: ChargeBattery2
+# Precondition setup: power ON, NormalMode, battery below full
+# Action: start charging
+# Expected: no change because NormalMode cannot charge; cleaning continues.
+power
+battery 50
+start
+expect power on
+expect mode NormalMode
+expect motor moving
+expect cleaner on
+expect battery 50
+charge
+expect charging off
+expect battery 50
+expect mode NormalMode
+expect motor moving
+expect motorForward true
+expect cleaner on
+expect cleanerMode normal
+exit

@@ -1,0 +1,19 @@
+# TC19: DustDetected1
+# Precondition: NormalMode
+# Action: detect dust
+# Expected: BoostMode, CleanerDriver mode is boost.
+power
+start
+expect power on
+expect mode NormalMode
+expect cleaner on
+expect cleanerMode normal
+expect motor moving
+dust
+expect power on
+expect mode BoostMode
+expect cleaner on
+expect cleanerMode boost
+expect motor moving
+expect motorForward true
+exit

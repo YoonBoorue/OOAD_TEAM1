@@ -1,0 +1,15 @@
+# TC32 : ObstacleDetected9
+# Precondition : NormalMode, forward=false
+# Action : left + right obstacle detected, front clear
+# Expected : no change from backward escape state, forward=false remains
+power
+start
+expect mode NormalMode
+obstacle 1 1 1
+expect motorForward false
+obstacle 0 1 1
+expect mode NormalMode
+expect cleaner on
+expect motor moving
+expect motorForward false
+exit

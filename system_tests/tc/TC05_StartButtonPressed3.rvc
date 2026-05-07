@@ -1,0 +1,16 @@
+# TC5: StartButtonPressed3
+# Precondition setup: power on, LowBatteryMode
+power
+battery 5
+low-battery
+expect mode LowBatteryMode
+expect motor stopped
+expect cleaner off
+# Action: press start button once
+start
+expect power on
+expect mode LowBatteryMode
+expect motor stopped
+expect cleaner off
+expect battery 5
+exit

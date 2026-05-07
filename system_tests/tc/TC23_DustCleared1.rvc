@@ -1,0 +1,21 @@
+# TC23: DustCleared1
+# Precondition: BoostMode
+# Action: timerExpired
+# Expected: NormalMode, CleanerDriver mode is normal.
+# Required simulator command: timer-expired
+# Required Controller behavior: enterMode(currentMode->timerExpired())
+power
+start
+dust
+expect power on
+expect mode BoostMode
+expect cleaner on
+expect cleanerMode boost
+timer-expired
+expect power on
+expect mode NormalMode
+expect cleaner on
+expect cleanerMode normal
+expect motor moving
+expect motorForward true
+exit
