@@ -1,0 +1,51 @@
+' RVC Control SW SDD/SDS Sequence Diagram
+' Reconstructed design-level diagram, not an exact original PDF diagram.
+
+@startuml SD_ObstacleAvoidance_ObjectSequence
+title SD_ObstacleAvoidance_ObjectSequence - UC5 and Output Commands UC12/UC13/UC14
+
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+participant "ObstacleSensorDriver\nor simulator" as ObstacleSensor
+participant ":Controller" as C
+participant ":ObstacleProcessor" as Processor
+participant "currentMode:\nOperatingMode" as Mode
+participant ":MotorDriver" as Motor
+
+ObstacleSensor -> C: obstacleDetected(direction[3])
+activate C
+alt currentMode == nullptr or direction == nullptr
+  C --> ObstacleSensor: ignored
+else valid input
+  C -> Processor: decideDirection(dir, currentMode, Motor)
+  activate Processor
+  Processor -> Motor: checkIsForward()
+  Motor --> Processor: forward?
+  Processor -> Mode: checkIsMoving(selectedDirection, Motor)
+  activate Mode
+  alt selectedDirection = FRONT
+    Mode -> Motor: moveForward()
+  else selectedDirection = LEFT
+    Mode -> Motor: turnLeft()
+    Mode -> Motor: moveForward()
+  else selectedDirection = RIGHT
+    Mode -> Motor: turnRight()
+    Mode -> Motor: moveForward()
+  else selectedDirection = BACK
+    Mode -> Motor: moveBackward()
+  end
+  Mode --> Processor: movement command complete
+  deactivate Mode
+  Processor --> C: void
+  deactivate Processor
+  C --> ObstacleSensor: motor state changed
+end
+deactivate C
+
+note over Mode, Motor
+Current implementation keeps cleaner state during obstacle avoidance.
+The artifact-level cleaner stop requirement is documented as a risk.
+end note
+
+@enduml

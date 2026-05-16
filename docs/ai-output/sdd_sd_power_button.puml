@@ -1,0 +1,40 @@
+' RVC Control SW SDD/SDS Sequence Diagram
+' Reconstructed design-level diagram, not an exact original PDF diagram.
+
+@startuml SD_PowerButton_ObjectSequence
+title SD_PowerButton_ObjectSequence - UC1/UC11 Power Button
+
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+actor PowerButton
+participant ":Controller" as C
+participant ":BatteryDriver" as Battery
+participant ":DustSensorDriver" as DustSensor
+participant ":ObstacleSensorDriver" as ObstacleSensor
+participant ":CleanerDriver" as Cleaner
+participant ":MotorDriver" as Motor
+participant "Modes.cpp\nstandbyMode()" as Modes
+
+PowerButton -> C: powerButtonPressed()
+activate C
+alt power == false
+  C -> Battery: initialize()
+  C -> Modes: standbyMode()
+  Modes --> C: StandbyMode&
+  C -> DustSensor: initialize()
+  C -> Cleaner: initialize()
+  C -> Motor: initialize()
+  C -> ObstacleSensor: initialize()
+  C --> PowerButton: power on, currentMode = StandbyMode
+else power == true
+  C -> Battery: turnOffBattery()
+  C -> ObstacleSensor: deactivateObstacleSensor()
+  C -> DustSensor: deactivateDustSensor()
+  C -> Motor: stopMoving()
+  C -> Cleaner: stopCleaning()
+  C --> PowerButton: power off, currentMode = nullptr
+end
+deactivate C
+
+@enduml

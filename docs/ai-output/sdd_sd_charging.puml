@@ -1,0 +1,62 @@
+' RVC Control SW SDD/SDS Sequence Diagram
+' Reconstructed design-level diagram, not an exact original PDF diagram.
+
+@startuml SD_Charging_ObjectSequence
+title SD_Charging_ObjectSequence - UC10/UC16 Charging, chargingTick, and Recovery
+
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+actor User
+participant "DigitalClockTick\nor simulator" as Clock
+participant ":Controller" as C
+participant ":BatteryDriver" as Battery
+participant "currentMode:\nOperatingMode" as Mode
+
+User -> C: chargeBattery()
+activate C
+C -> C: canStartCharging()
+alt power == false or currentMode.canCharge() == true
+  C -> Battery: startCharging()
+  Battery --> C: chargeable?
+  alt charging started
+    C -> C: chargingTick()
+    activate C
+    C -> Battery: inclineLV()
+    Battery --> C: increased?
+    C -> Battery: isFull()
+    alt LowBatteryMode and level > LowBatteryThreshold
+      C -> Mode: lowBatteryCleared()
+      Mode --> C: StandbyMode&
+    end
+    deactivate C
+  else battery full
+    C --> User: charging = off
+  end
+else currentMode = NormalMode or BoostMode
+  C --> User: charging rejected
+end
+deactivate C
+
+Clock -> C: chargingTick()
+activate C
+alt isNowCharging
+  C -> Battery: inclineLV()
+  C -> Battery: isFull()
+  alt full or cannot increase
+    C --> Clock: isNowCharging = false
+  else still charging
+    C --> Clock: battery level increased
+  end
+else not charging
+  C --> Clock: no state change
+end
+deactivate C
+
+User -> C: stopCharging()
+activate C
+C -> Battery: stopCharging()
+C --> User: isNowCharging = false
+deactivate C
+
+@enduml

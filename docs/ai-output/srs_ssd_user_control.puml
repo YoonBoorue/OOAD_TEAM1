@@ -1,0 +1,25 @@
+' RVC Control SW SRS SSD - User/Button Events
+' Reconstructed from project artifact summaries and current repository evidence.
+
+@startuml SSD_UserControl
+title SSD_UserControl - True SSD: User/Button Events
+
+skinparam sequenceMessageAlign center
+hide footbox
+
+actor User
+participant "PowerButton" as PowerButton
+participant "StartButton" as StartButton
+participant ":RVCSystem" as RVCSystem
+
+User -> PowerButton: press
+PowerButton -> RVCSystem: powerButtonPressed()
+
+User -> StartButton: press
+StartButton -> RVCSystem: startButtonPressed()
+
+User -> RVCSystem: chargeBattery()
+
+User -> RVCSystem: stopCharging()
+
+@enduml

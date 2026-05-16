@@ -1,0 +1,47 @@
+' RVC Control SW SDD/SDS Sequence Diagram
+' Reconstructed design-level diagram, not an exact original PDF diagram.
+
+@startuml SD_StartButton_ModeSequence
+title SD_StartButton_ModeSequence - UC2/UC7 and Output Commands UC3/UC4/UC8/UC9
+
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+actor StartButton
+participant ":Controller" as C
+participant "currentMode:\nOperatingMode" as Mode
+participant ":CleanerDriver" as Cleaner
+participant ":MotorDriver" as Motor
+
+StartButton -> C: startButtonPressed()
+activate C
+alt currentMode == nullptr or isNowCharging
+  C --> StartButton: no state change
+else currentMode = StandbyMode
+  C -> Mode: startButtonPressed(Cleaner, Motor)
+  activate Mode
+  Mode -> Motor: moveForward()
+  Mode -> Cleaner: startCleaning()
+  Mode --> C: NormalMode&
+  deactivate Mode
+  C --> StartButton: mode = NormalMode
+else currentMode = NormalMode or BoostMode
+  C -> Mode: startButtonPressed(Cleaner, Motor)
+  activate Mode
+  Mode -> Motor: stopMoving()
+  Mode -> Cleaner: stopCleaning()
+  Mode --> C: StandbyMode&
+  deactivate Mode
+  C --> StartButton: mode = StandbyMode
+else currentMode = LowBatteryMode
+  C -> Mode: startButtonPressed(Cleaner, Motor)
+  activate Mode
+  Mode -> Motor: stopMoving()
+  Mode -> Cleaner: stopCleaning()
+  Mode --> C: LowBatteryMode&
+  deactivate Mode
+  C --> StartButton: mode unchanged
+end
+deactivate C
+
+@enduml

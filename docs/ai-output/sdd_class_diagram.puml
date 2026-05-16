@@ -1,0 +1,202 @@
+' RVC Control SW SDD/SDS Class Diagram
+' Reconstructed from docs/ai-input/ood_summary.md, docs/ai-input/ooi_summary.md,
+' docs/ai-output/srs.md, and current repository evidence.
+
+@startuml ClassDiagram_RVCDesign
+title ClassDiagram_RVCDesign - RVC Control SW Design Classes
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+hide empty members
+
+package "rvc::control" {
+  class Controller {
+    - power: bool
+    - isNowCharging: bool
+    - currentMode: OperatingMode*
+    - batteryDriver: BatteryDriver*
+    - cleanerDriver: CleanerDriver*
+    - dustSensorDriver: DustSensorDriver*
+    - motorDriver: MotorDriver*
+    - obstacleSensorDriver: ObstacleSensorDriver*
+    - obstacleProcessor: ObstacleProcessor*
+    - dustProcessor: DustProcessor*
+    - canStartCharging(): bool
+    + powerButtonPressed(): void
+    + startButtonPressed(): void
+    + chargeBattery(): void
+    + chargingTick(): void
+    + stopCharging(): void
+    + lowBatteryDetected(): void
+    + lowBatteryCleared(): void
+    + dustDetected(): void
+    + obstacleDetected(direction: bool[3]): void
+    + timerExpiredNow(): void
+  }
+}
+
+package "rvc::mode" {
+  enum ModeKind {
+    Standby
+    Normal
+    Boost
+    LowBattery
+  }
+
+  abstract class OperatingMode {
+    + checkIsMoving(direction: Direction, motorDriver: MotorDriver): void
+    + startButtonPressed(cleanerDriver: CleanerDriver, motorDriver: MotorDriver): OperatingMode&
+    + lowBatteryDetected(cleanerDriver: CleanerDriver, motorDriver: MotorDriver): OperatingMode&
+    + lowBatteryCleared(): OperatingMode&
+    + dustDetected(cleanerDriver: CleanerDriver): OperatingMode&
+    + canCharge(): bool
+    + timerExpired(cleanerDriver: CleanerDriver): OperatingMode&
+    + kind(): ModeKind
+    + name(): const char*
+  }
+
+  class StandbyMode
+  class NormalMode
+  class BoostMode
+  class LowBatteryMode
+}
+
+package "rvc::driver" {
+  enum Direction {
+    FRONT
+    LEFT
+    RIGHT
+    BACK
+  }
+
+  class BatteryDriver {
+    + MinLevel: int
+    + MaxLevel: int
+    + LowBatteryThreshold: int
+    + ChargeStep: int
+    - LV: int
+    - status: bool
+    + initialize(): void
+    + turnOffBattery(): void
+    + startCharging(): bool
+    + stopCharging(): void
+    + inclineLV(): bool
+    + declineLV(): void
+    + isLow(): bool
+    + isFull(): bool
+    + level(): int
+    + setLevel(level: int): void
+  }
+
+  class CleanerDriver {
+    - mode: string
+    + initialize(): void
+    + startCleaning(): void
+    + stopCleaning(): void
+    + decideSetting(boost: bool): void
+    + isCleaning(): bool
+    + currentMode(): string
+  }
+
+  class MotorDriver {
+    - status: bool
+    - moveDirection: Direction
+    - forward: bool
+    + initialize(): void
+    + moveForward(): void
+    + stopMoving(): void
+    + turnLeft(): void
+    + turnRight(): void
+    + moveBackward(): void
+    + checkIsForward(): bool
+    + isMoving(): bool
+    + currentDirection(): Direction
+  }
+
+  class DustSensorDriver {
+    - dust: bool
+    - active: bool
+    + initialize(): void
+    + deactivateDustSensor(): void
+    + hasDust(): bool
+    + isActive(): bool
+    + isDustDetected(): bool
+  }
+
+  class ObstacleSensorDriver {
+    - direction: bool[3]
+    - active: bool
+    + initialize(): void
+    + deactivateObstacleSensor(): void
+    + isActive(): bool
+  }
+}
+
+package "rvc::processor" {
+  class DustProcessor {
+    + decideIsDusted(cleaner: CleanerDriver, currentMode: OperatingMode): OperatingMode&
+  }
+
+  class ObstacleProcessor {
+    - direction_: array<bool, 3>
+    + decideDirection(dir: array<bool, 3>, currentMode: OperatingMode, motor: MotorDriver): void
+  }
+}
+
+package "simulator" {
+  class RvcSimulatorCli {
+    + powerCommand(): void
+    + startCommand(): void
+    + chargeCommand(): void
+    + chargeTickCommand(): void
+    + stopChargeCommand(): void
+    + lowBatteryCommand(): void
+    + clearLowBatteryCommand(): void
+    + dustCommand(): void
+    + timerExpiredCommand(): void
+    + obstacleCommand(): void
+    + expectCommand(): void
+  }
+}
+
+OperatingMode <|-- StandbyMode
+OperatingMode <|-- NormalMode
+OperatingMode <|-- BoostMode
+OperatingMode <|-- LowBatteryMode
+
+Controller *-- BatteryDriver : raw pointer ownership
+Controller *-- CleanerDriver : raw pointer ownership
+Controller *-- DustSensorDriver : raw pointer ownership
+Controller *-- MotorDriver : raw pointer ownership
+Controller *-- ObstacleSensorDriver : raw pointer ownership
+Controller *-- DustProcessor : raw pointer ownership
+Controller *-- ObstacleProcessor : raw pointer ownership
+Controller --> OperatingMode : currentMode, non-owning singleton
+
+Controller --> DustProcessor : delegates dust decision
+Controller --> ObstacleProcessor : delegates obstacle decision
+Controller --> BatteryDriver : charging and battery state
+
+DustProcessor --> OperatingMode : calls dustDetected()
+DustProcessor --> CleanerDriver : boost setting through mode
+ObstacleProcessor --> OperatingMode : calls checkIsMoving()
+ObstacleProcessor --> MotorDriver : reads forward state
+
+OperatingMode --> CleanerDriver : output commands
+OperatingMode --> MotorDriver : output commands
+MotorDriver --> Direction
+OperatingMode --> ModeKind
+RvcSimulatorCli --> Controller : script and interactive commands
+
+note right of Controller
+Receives true incoming System Operations.
+Output commands are delegated to modes and drivers
+except direct power on/off initialization and shutdown paths.
+end note
+
+note bottom of OperatingMode
+State Pattern basis.
+Concrete modes are stateless function-local singletons in Modes.cpp.
+end note
+
+@enduml
