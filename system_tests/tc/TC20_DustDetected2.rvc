@@ -1,0 +1,21 @@
+# TC20: DustDetected2
+# Precondition: BoostMode
+# Action: detect additional dust
+# Expected: no visible state change. BoostMode and boost cleaning remain.
+# Note: timer reset is an internal side effect and is not directly observable by the current CLI accessors.
+power
+start
+dust
+expect power on
+expect mode BoostMode
+expect cleaner on
+expect cleanerMode boost
+expect motor moving
+dust
+expect power on
+expect mode BoostMode
+expect cleaner on
+expect cleanerMode boost
+expect motor moving
+expect motorForward true
+exit

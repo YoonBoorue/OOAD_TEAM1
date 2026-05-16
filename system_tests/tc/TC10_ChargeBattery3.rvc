@@ -1,0 +1,23 @@
+# TC10: ChargeBattery3
+# Precondition setup: power ON, BoostMode, battery below full
+# Action: start charging
+# Expected: no change because BoostMode cannot charge.
+# NOTE: BoostMode setup requires dust event implementation or the corresponding PR.
+power
+battery 50
+start
+dust
+expect power on
+expect mode BoostMode
+expect cleaner on
+expect cleanerMode boost
+expect battery 50
+charge
+expect charging off
+expect battery 50
+expect mode BoostMode
+expect motor moving
+expect motorForward true
+expect cleaner on
+expect cleanerMode boost
+exit

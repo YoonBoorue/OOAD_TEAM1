@@ -6,9 +6,19 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(OOAD_ENABLE_COVERAGE "Enable coverage flags" OFF)
+option(OOAD_BUILD_UNIT_TESTS "Build GoogleTest-based unit tests" ON)
+option(OOAD_BUILD_SYSTEM_TESTS "Register simulator-based system tests" ON)
 
 add_library(ooad_core
-    src/rvc/RobotController.cpp
+    src/rvc/DustProcessor.cpp
+    src/rvc/ObstacleProcessor.cpp
+    src/rvc/Modes.cpp
+    src/rvc/Controller.cpp
+    src/rvc/BatteryDriver.cpp
+    src/rvc/CleanerDriver.cpp
+    src/rvc/DustSensorDriver.cpp
+    src/rvc/MotorDriver.cpp
+    src/rvc/ObstacleSensorDriver.cpp
 )
 
 target_include_directories(ooad_core
@@ -49,7 +59,11 @@ target_link_libraries(rvc_simulator
 
 include(CTest)
 
-if (BUILD_TESTING)
+# -----------------------------
+# Unit Tests
+# Google Test 사용
+# -----------------------------
+if (BUILD_TESTING AND OOAD_BUILD_UNIT_TESTS)
     include(FetchContent)
 
     FetchContent_Declare(
@@ -61,16 +75,31 @@ if (BUILD_TESTING)
 
     FetchContent_MakeAvailable(googletest)
 
-    add_executable(ooad_tests
-        tests/RobotControllerTest.cpp
+    file(GLOB_RECURSE OOAD_TEST_SOURCES CONFIGURE_DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp
     )
 
-    target_link_libraries(ooad_tests
-        PRIVATE
-            ooad_core
-            GTest::gtest_main
-    )
+    if (OOAD_TEST_SOURCES)
+        add_executable(ooad_tests
+            ${OOAD_TEST_SOURCES}
+        )
 
-    include(GoogleTest)
-    gtest_discover_tests(ooad_tests)
+        target_link_libraries(ooad_tests
+            PRIVATE
+                ooad_core
+                GTest::gtest_main
+        )
+
+        include(GoogleTest)
+        gtest_discover_tests(ooad_tests)
+    endif()
+endif()
+
+# -----------------------------
+# System Tests
+# Simulator CLI 사용
+# Google Test 사용 X
+# -----------------------------
+if (BUILD_TESTING AND OOAD_BUILD_SYSTEM_TESTS)
+    include(cmake/SystemTests.cmake)
 endif()

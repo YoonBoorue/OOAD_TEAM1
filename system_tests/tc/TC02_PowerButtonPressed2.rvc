@@ -1,0 +1,15 @@
+# TC2: PowerButtonPressed2
+# Precondition setup: power on with battery level 80
+power
+battery 80
+# Action: press power button once
+power
+expect power off
+expect mode Off
+expect motor stopped
+expect cleaner off
+expect dustSensor inactive
+expect obstacleSensor inactive
+expect charging off
+expect battery 80
+exit

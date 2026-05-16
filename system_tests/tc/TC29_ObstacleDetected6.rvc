@@ -1,0 +1,33 @@
+# TC29 : ObstacleDetected6
+# Precondition : NormalMode, forward=true/false
+# Action : front + right obstacle detected, left clear
+# Expected : turnLeft, moveDirection changed to LEFT, then forward=true
+
+# Case A: forward=true
+power
+start
+expect mode NormalMode
+expect motorForward true
+expect motorDirection FRONT
+obstacle 1 0 1
+expect mode NormalMode
+expect cleaner on
+expect motor moving
+expect motorForward true
+expect motorDirection LEFT
+
+# Reset
+power
+power
+start
+
+# Case B: forward=false
+obstacle 1 1 1
+expect motorForward false
+obstacle 1 0 1
+expect mode NormalMode
+expect cleaner on
+expect motor moving
+expect motorForward true
+expect motorDirection LEFT
+exit

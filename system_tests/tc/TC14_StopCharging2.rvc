@@ -1,0 +1,22 @@
+# TC14: StopCharging2
+# Precondition setup: StandbyMode, charging in progress
+# Action: press start button once
+# Expected: no change because start is ignored while charging.
+power
+battery 50
+charge
+expect power on
+expect mode StandbyMode
+expect charging on
+expect battery 60
+expect motor stopped
+expect cleaner off
+start
+expect power on
+expect mode StandbyMode
+expect charging on
+expect battery 60
+expect motor stopped
+expect cleaner off
+expect cleanerMode off
+exit

@@ -1,0 +1,19 @@
+# TC17: LowBatteryDetected3
+# Precondition: StandbyMode
+# Action: detect battery level below threshold
+# Expected: enter LowBatteryMode, motor and cleaner remain stopped
+power
+expect power on
+expect mode StandbyMode
+expect motor stopped
+expect cleaner off
+battery 5
+low-battery
+expect power on
+expect mode LowBatteryMode
+expect battery 5
+expect motor stopped
+expect motorForward false
+expect cleaner off
+expect cleanerMode off
+exit

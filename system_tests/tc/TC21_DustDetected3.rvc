@@ -1,0 +1,18 @@
+# TC21: DustDetected3
+# Precondition: StandbyMode
+# Action: detect dust
+# Expected: no change. Cleaner does not start.
+power
+expect power on
+expect mode StandbyMode
+expect cleaner off
+expect cleanerMode off
+expect motor stopped
+dust
+expect power on
+expect mode StandbyMode
+expect cleaner off
+expect cleanerMode off
+expect motor stopped
+expect motorForward false
+exit

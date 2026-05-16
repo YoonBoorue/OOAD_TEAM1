@@ -1,0 +1,28 @@
+# TC44: TimerExpired
+# Precondition: BoostMode → LowBatteryMode (before timer fires)
+# Action: timer-expired fires while system is already in LowBatteryMode
+# Expected: LowBatteryMode maintained (does not transition to NormalMode),
+#           cleaner remains off (not restored to boost or normal)
+power
+start
+dust
+expect power on
+expect mode BoostMode
+expect cleaner on
+expect cleanerMode boost
+expect motor moving
+expect motorForward true
+battery 5
+low-battery
+expect power on
+expect mode LowBatteryMode
+expect cleaner off
+expect cleanerMode off
+expect motor stopped
+timer-expired
+expect power on
+expect mode LowBatteryMode
+expect cleaner off
+expect cleanerMode off
+expect motor stopped
+exit

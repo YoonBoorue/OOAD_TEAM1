@@ -1,0 +1,14 @@
+---
+# 프로젝트 공통 코드 분석(Lint) 설정
+# CI(GitHub Actions) 환경과 동일한 검사 규칙을 적용합니다.
+
+Checks: 'clang-diagnostic-*,clang-analyzer-*,bugprone-*,performance-*,portability-*,readability-*,modernize-*'
+WarningsAsErrors: ''
+
+# include 폴더 내의 헤더 파일들도 검사 대상에 포함합니다.
+HeaderFilterRegex: 'include/.*'
+
+# 기타 성능 및 호환성 설정
+AnalyzeTemporaryDtors: false
+FormatStyle: none
+...

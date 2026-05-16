@@ -1,0 +1,42 @@
+# TC43 : ObstacleDetectedBoost10
+# Related normal-mode case : TC33_ObstacleDetected10
+# Precondition : BoostMode, forward=true/false
+# Action : all directions blocked
+# Expected : BoostMode 유지, CleanerDriver mode=boost 유지, moveBackward, forward=false
+
+# Case A: forward=true
+power
+start
+dust
+expect mode BoostMode
+expect cleaner on
+expect cleanerMode boost
+expect motorForward true
+obstacle 1 1 1
+expect mode BoostMode
+expect cleaner on
+expect cleanerMode boost
+expect motor moving
+expect motorForward false
+
+# Reset
+power
+power
+start
+dust
+expect mode BoostMode
+expect cleaner on
+expect cleanerMode boost
+
+# Case B: forward=false
+obstacle 1 1 1
+expect mode BoostMode
+expect cleanerMode boost
+expect motorForward false
+obstacle 1 1 1
+expect mode BoostMode
+expect cleaner on
+expect cleanerMode boost
+expect motor moving
+expect motorForward false
+exit

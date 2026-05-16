@@ -1,0 +1,20 @@
+# TC22: DustDetected4
+# Precondition: LowBatteryMode
+# Action: detect dust
+# Expected: no change. Cleaner does not start.
+power
+battery 5
+low-battery
+expect power on
+expect mode LowBatteryMode
+expect cleaner off
+expect cleanerMode off
+expect motor stopped
+dust
+expect power on
+expect mode LowBatteryMode
+expect cleaner off
+expect cleanerMode off
+expect motor stopped
+expect motorForward false
+exit
