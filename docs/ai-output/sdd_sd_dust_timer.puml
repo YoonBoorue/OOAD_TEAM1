@@ -1,0 +1,59 @@
+' RVC Control SW SDD/SDS Sequence Diagram
+' Reconstructed design-level diagram, not an exact original PDF diagram.
+
+@startuml SD_DustAndTimer_ObjectSequence
+title SD_DustAndTimer_ObjectSequence - UC6 Boost Mode and Timer
+
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+participant "DustSensorDriver\nor simulator" as DustSensor
+participant "DigitalClockTick\nor simulator" as Clock
+participant ":Controller" as C
+participant ":DustProcessor" as DustProcessor
+participant "currentMode:\nOperatingMode" as Mode
+participant ":CleanerDriver" as Cleaner
+
+DustSensor -> C: dustDetected()
+activate C
+alt currentMode == nullptr or isNowCharging
+  C --> DustSensor: ignored
+else currentMode exists
+  C -> DustProcessor: decideIsDusted(Cleaner, currentMode)
+  activate DustProcessor
+  DustProcessor -> Mode: dustDetected(Cleaner)
+  activate Mode
+  alt currentMode = NormalMode
+    Mode -> Cleaner: decideSetting(true)
+    Mode --> DustProcessor: BoostMode&
+  else currentMode = StandbyMode, BoostMode, or LowBatteryMode
+    Mode --> DustProcessor: same/allowed mode&
+  end
+  deactivate Mode
+  DustProcessor --> C: nextMode&
+  deactivate DustProcessor
+  alt nextMode = BoostMode
+    C -> C: startTimer()
+  end
+  C --> DustSensor: currentMode updated
+end
+deactivate C
+
+Clock -> C: timerExpired() requirement\nController::timerExpiredNow() in repo
+activate C
+alt power == true and currentMode != nullptr
+  C -> Mode: timerExpired(Cleaner)
+  activate Mode
+  alt currentMode = BoostMode
+    Mode -> Cleaner: decideSetting(false)
+    Mode --> C: NormalMode&
+  else other mode
+    Mode --> C: same mode&
+  end
+  deactivate Mode
+else inactive system
+  C --> Clock: no state change
+end
+deactivate C
+
+@enduml

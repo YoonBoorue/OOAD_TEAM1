@@ -1,0 +1,47 @@
+' RVC Control SW SDD/SDS State Diagram
+' Reconstructed design-level diagram, not an exact original PDF diagram.
+
+@startuml StateModeTransitionDesign
+title StateModeTransitionDesign - Mode and Charging State
+
+hide empty description
+
+[*] --> Off
+
+Off --> StandbyMode : powerButtonPressed()
+Off --> Off : chargeBattery()\nallowed if battery not full
+
+StandbyMode --> NormalMode : startButtonPressed()
+NormalMode --> StandbyMode : startButtonPressed()
+BoostMode --> StandbyMode : startButtonPressed()
+
+NormalMode --> BoostMode : dustDetected()
+BoostMode --> NormalMode : timerExpired()\nrepo: timerExpiredNow()
+
+StandbyMode --> LowBatteryMode : lowBatteryDetected()
+NormalMode --> LowBatteryMode : lowBatteryDetected()
+BoostMode --> LowBatteryMode : lowBatteryDetected()
+LowBatteryMode --> LowBatteryMode : startButtonPressed()
+LowBatteryMode --> StandbyMode : lowBatteryCleared()\nor chargingTick() over threshold
+
+StandbyMode --> Off : powerButtonPressed()
+NormalMode --> Off : powerButtonPressed()
+BoostMode --> Off : powerButtonPressed()
+LowBatteryMode --> Off : powerButtonPressed()
+
+state ChargingFlag {
+  [*] --> NotCharging
+  NotCharging --> Charging : chargeBattery()\nallowed by mode
+  Charging --> NotCharging : stopCharging()
+  Charging --> NotCharging : chargingTick()\nfull or cannot increase
+  Charging --> Charging : chargingTick()\nlevel increases
+}
+
+note right of ChargingFlag
+Charging is implemented as Controller::isNowCharging,
+not as an OperatingMode subclass.
+NormalMode and BoostMode reject charging.
+StandbyMode, LowBatteryMode, and Off can charge if battery is not full.
+end note
+
+@enduml

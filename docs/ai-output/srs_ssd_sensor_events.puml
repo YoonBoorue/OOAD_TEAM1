@@ -1,0 +1,28 @@
+' RVC Control SW SRS SSD - Sensor/Battery/Timer Events
+' Reconstructed from project artifact summaries and current repository evidence.
+
+@startuml SSD_SensorEvents
+title SSD_SensorEvents - True SSD: Sensor/Battery/Timer Events
+
+skinparam sequenceMessageAlign center
+hide footbox
+
+participant "DustSensorDriver" as DustSensorDriver
+participant "ObstacleSensorDriver" as ObstacleSensorDriver
+participant "BatteryDriver" as BatteryDriver
+participant "DigitalClockTick" as DigitalClockTick
+participant ":RVCSystem" as RVCSystem
+
+DustSensorDriver -> RVCSystem: dustDetected()
+
+ObstacleSensorDriver -> RVCSystem: obstacleDetected(direction)
+
+BatteryDriver -> RVCSystem: lowBatteryDetected()
+
+BatteryDriver -> RVCSystem: lowBatteryCleared()
+
+DigitalClockTick -> RVCSystem: timerExpired()
+
+DigitalClockTick -> RVCSystem: chargingTick()
+
+@enduml

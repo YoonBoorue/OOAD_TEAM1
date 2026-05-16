@@ -1,0 +1,48 @@
+' RVC Control SW SDD/SDS Sequence Diagram
+' Reconstructed design-level diagram, not an exact original PDF diagram.
+
+@startuml SD_LowBattery_ObjectSequence
+title SD_LowBattery_ObjectSequence - UC15 Low Battery Mode
+
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+participant "BatteryDriver\nor simulator" as BatterySignal
+participant ":Controller" as C
+participant "currentMode:\nOperatingMode" as Mode
+participant ":CleanerDriver" as Cleaner
+participant ":MotorDriver" as Motor
+
+BatterySignal -> C: lowBatteryDetected()
+activate C
+alt currentMode == nullptr
+  C --> BatterySignal: ignored
+else currentMode exists
+  C -> Mode: lowBatteryDetected(Cleaner, Motor)
+  activate Mode
+  Mode -> Motor: stopMoving()
+  Mode -> Cleaner: stopCleaning()
+  Mode --> C: LowBatteryMode&
+  deactivate Mode
+  C --> BatterySignal: mode = LowBatteryMode
+end
+deactivate C
+
+BatterySignal -> C: lowBatteryCleared()
+activate C
+alt currentMode == nullptr
+  C --> BatterySignal: ignored
+else currentMode exists
+  C -> Mode: lowBatteryCleared()
+  activate Mode
+  Mode --> C: implementation policy next mode
+  deactivate Mode
+  C --> BatterySignal: current mode updated
+end
+deactivate C
+
+note over C, Mode
+Current LowBatteryMode::lowBatteryCleared() returns StandbyMode.
+end note
+
+@enduml
