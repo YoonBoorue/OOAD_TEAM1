@@ -1,0 +1,10 @@
+# P06: Timer in BoostMode returns to NormalMode.
+power
+start
+dust
+expect_mode BoostMode
+timer
+expect_mode NormalMode
+expect_motor on
+expect_cleaner on
+expect_boost off

@@ -1,0 +1,7 @@
+# N23: Clock tick in StandbyMode with no sensor event does not change mode.
+power
+clock_tick
+expect_mode StandbyMode
+expect_motor off
+expect_cleaner off
+expect_boost off

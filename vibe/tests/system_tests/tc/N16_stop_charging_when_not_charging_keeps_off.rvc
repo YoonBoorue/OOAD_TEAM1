@@ -1,0 +1,8 @@
+# N16: Stop charging when not charging keeps charging off.
+power
+stop_charge
+expect_mode StandbyMode
+expect_charging off
+expect_motor off
+expect_cleaner off
+expect_boost off

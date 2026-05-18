@@ -1,0 +1,8 @@
+# N20: Low battery cleared outside LowBatteryMode does not create invalid transition.
+power
+start
+low_battery_cleared
+expect_mode NormalMode
+expect_motor on
+expect_cleaner on
+expect_boost off

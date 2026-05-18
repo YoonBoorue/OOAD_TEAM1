@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(VIBE_BUILD_TESTS "Build Google Test unit tests" ON)
+option(VIBE_BUILD_SYSTEM_TESTS "Register simulator script system tests" ON)
 
 add_library(rvc_vibe_core
     src/Controller.cpp
@@ -38,6 +39,23 @@ target_link_libraries(rvc_vibe_simulator
 
 include(CTest)
 
+if (BUILD_TESTING AND VIBE_BUILD_SYSTEM_TESTS)
+    file(GLOB VIBE_SYSTEM_TEST_SCRIPTS CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/system_tests/tc/*.rvc"
+    )
+
+    foreach(_VIBE_SYSTEM_TEST_SCRIPT IN LISTS VIBE_SYSTEM_TEST_SCRIPTS)
+        get_filename_component(_VIBE_SYSTEM_TEST_NAME "${_VIBE_SYSTEM_TEST_SCRIPT}" NAME_WE)
+        add_test(
+            NAME "system_${_VIBE_SYSTEM_TEST_NAME}"
+            COMMAND rvc_vibe_simulator --script "${_VIBE_SYSTEM_TEST_SCRIPT}"
+        )
+        set_tests_properties("system_${_VIBE_SYSTEM_TEST_NAME}" PROPERTIES
+            LABELS "system"
+        )
+    endforeach()
+endif()
+
 if (BUILD_TESTING AND VIBE_BUILD_TESTS)
     find_package(GTest QUIET)
 
@@ -64,7 +82,7 @@ if (BUILD_TESTING AND VIBE_BUILD_TESTS)
     endif()
 
     file(GLOB_RECURSE VIBE_TEST_SOURCES CONFIGURE_DEPENDS
-        ${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit_tests/*.cpp
     )
 
     if (VIBE_TEST_SOURCES)

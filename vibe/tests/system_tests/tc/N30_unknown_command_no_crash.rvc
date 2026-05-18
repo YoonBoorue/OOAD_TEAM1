@@ -1,0 +1,8 @@
+# N30: Unknown simulator command reports UNKNOWN without crashing.
+clock_tick
+expect_mode Off
+unknown_simulator_command
+expect_mode Off
+expect_motor off
+expect_cleaner off
+expect_boost off

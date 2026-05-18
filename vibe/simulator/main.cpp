@@ -43,12 +43,32 @@ const char* onOff(bool value)
     return value ? "on" : "off";
 }
 
+const char* directionName(rvc::Direction direction)
+{
+    switch (direction)
+    {
+    case rvc::Direction::Forward:
+        return "Forward";
+    case rvc::Direction::Left:
+        return "Left";
+    case rvc::Direction::Right:
+        return "Right";
+    case rvc::Direction::Backward:
+        return "Backward";
+    }
+
+    return "UnknownDirection";
+}
+
 void printState(const rvc::Controller& controller)
 {
     std::cout << "[Power: " << (controller.currentMode == nullptr ? "OFF" : "ON") << "] "
               << "[Mode: " << modeName(controller) << "] "
               << "[Motor: " << onOff(controller.motorDriver.isRunning) << "] "
-              << "[Cleaner: " << onOff(controller.cleanerDriver.isRunning) << "]\n";
+              << "[Cleaner: " << onOff(controller.cleanerDriver.isRunning) << "] "
+              << "[Boost: " << onOff(controller.cleanerDriver.isBoosting) << "] "
+              << "[Charging: " << onOff(controller.batteryDriver.isCharging) << "] "
+              << "[Direction: " << directionName(controller.motorDriver.direction) << "]\n";
 }
 
 void printMenu()
@@ -202,6 +222,62 @@ int runScript(const std::string& path)
             const bool passed = controller.motorDriver.isRunning == expectedOn;
             failures += passed ? 0 : 1;
             printExpectation("expect_motor " + expected, passed);
+        }
+        else if (command == "expect_cleaner")
+        {
+            std::string expected;
+            stream >> expected;
+            bool expectedOn = false;
+            if (!parseOnOff(expected, expectedOn))
+            {
+                std::cout << "FAIL expect_cleaner " << expected << "\n";
+                ++failures;
+                continue;
+            }
+
+            const bool passed = controller.cleanerDriver.isRunning == expectedOn;
+            failures += passed ? 0 : 1;
+            printExpectation("expect_cleaner " + expected, passed);
+        }
+        else if (command == "expect_boost")
+        {
+            std::string expected;
+            stream >> expected;
+            bool expectedOn = false;
+            if (!parseOnOff(expected, expectedOn))
+            {
+                std::cout << "FAIL expect_boost " << expected << "\n";
+                ++failures;
+                continue;
+            }
+
+            const bool passed = controller.cleanerDriver.isBoosting == expectedOn;
+            failures += passed ? 0 : 1;
+            printExpectation("expect_boost " + expected, passed);
+        }
+        else if (command == "expect_charging")
+        {
+            std::string expected;
+            stream >> expected;
+            bool expectedOn = false;
+            if (!parseOnOff(expected, expectedOn))
+            {
+                std::cout << "FAIL expect_charging " << expected << "\n";
+                ++failures;
+                continue;
+            }
+
+            const bool passed = controller.batteryDriver.isCharging == expectedOn;
+            failures += passed ? 0 : 1;
+            printExpectation("expect_charging " + expected, passed);
+        }
+        else if (command == "expect_direction")
+        {
+            std::string expected;
+            stream >> expected;
+            const bool passed = expected == directionName(controller.motorDriver.direction);
+            failures += passed ? 0 : 1;
+            printExpectation("expect_direction " + expected, passed);
         }
         else
         {

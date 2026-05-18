@@ -1,0 +1,11 @@
+# P09: Charging is accepted in StandbyMode.
+power
+low_battery
+expect_mode LowBatteryMode
+low_battery_cleared
+expect_mode StandbyMode
+charge
+expect_mode StandbyMode
+expect_charging on
+expect_motor off
+expect_cleaner off

@@ -1,0 +1,8 @@
+# N24: Clock tick in NormalMode with no sensor event does not change mode.
+power
+start
+clock_tick
+expect_mode NormalMode
+expect_motor on
+expect_cleaner on
+expect_boost off

@@ -1,0 +1,9 @@
+# N12: Obstacle while LowBatteryMode does not start motor.
+power
+start
+low_battery
+obstacle_all
+expect_mode LowBatteryMode
+expect_motor off
+expect_cleaner off
+expect_boost off

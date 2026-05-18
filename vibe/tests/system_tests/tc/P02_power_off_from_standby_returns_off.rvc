@@ -1,0 +1,9 @@
+# P02: Power off from StandbyMode returns to Off.
+power
+expect_mode StandbyMode
+power
+expect_mode Off
+expect_motor off
+expect_cleaner off
+expect_boost off
+expect_charging off

@@ -1,0 +1,12 @@
+# N09: Charge while BoostMode is rejected.
+power
+low_battery
+low_battery_cleared
+start
+dust
+charge
+expect_mode BoostMode
+expect_charging off
+expect_motor on
+expect_cleaner on
+expect_boost on

@@ -1,0 +1,6 @@
+# N01: Start while Off does not enter NormalMode.
+start
+expect_mode Off
+expect_motor off
+expect_cleaner off
+expect_boost off

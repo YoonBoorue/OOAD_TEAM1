@@ -1,0 +1,7 @@
+# N11: Obstacle while StandbyMode does not start motor.
+power
+obstacle_front
+expect_mode StandbyMode
+expect_motor off
+expect_cleaner off
+expect_boost off
