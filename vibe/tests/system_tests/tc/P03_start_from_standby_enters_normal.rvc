@@ -1,0 +1,8 @@
+# P03: Start from StandbyMode enters NormalMode.
+power
+start
+expect_mode NormalMode
+expect_motor on
+expect_cleaner on
+expect_boost off
+expect_direction Forward

@@ -1,0 +1,9 @@
+# P04: Start from NormalMode returns to StandbyMode.
+power
+start
+expect_mode NormalMode
+start
+expect_mode StandbyMode
+expect_motor off
+expect_cleaner off
+expect_boost off
