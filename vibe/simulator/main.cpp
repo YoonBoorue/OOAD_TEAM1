@@ -75,9 +75,31 @@ void printMenu()
 {
     std::cout << "\n"
               << "1) Power Button  2) Start Button  3) Dust Detected\n"
-              << "4) Obstacle (front)  5) Low Battery  6) Charge Battery\n"
-              << "7) Stop Charging  8) Timer Expired  9) Clock Tick  0) Exit\n"
+              << "4) Obstacle Front  5) Obstacle Left  6) Obstacle Right  7) Obstacle All\n"
+              << "8) Low Battery  9) Charge Battery  10) Stop Charging\n"
+              << "11) Timer Expired  12) Clock Tick  13) Charge Tick\n"
+              << "14) Low Battery Cleared  0) Exit\n"
               << "> ";
+}
+
+void runObstacleCommand(rvc::Controller& controller, const bool direction[3], bool printAvoidance)
+{
+    rvc::ObstacleSensorDriver obstacleSnapshot;
+    obstacleSnapshot.initialize();
+    obstacleSnapshot.front = direction[0];
+    obstacleSnapshot.left = direction[1];
+    obstacleSnapshot.right = direction[2];
+
+    const rvc::Direction selectedDirection =
+        controller.obstacleProcessor.decideDirection(obstacleSnapshot);
+
+    controller.obstacleDetected(direction);
+    controller.obstacleSensorDriver.clear();
+
+    if (printAvoidance)
+    {
+        std::cout << "[Avoidance: " << directionName(selectedDirection) << "]\n";
+    }
 }
 
 void runCommand(rvc::Controller& controller, const std::string& command)
@@ -98,26 +120,22 @@ void runCommand(rvc::Controller& controller, const std::string& command)
     else if (command == "obstacle_front")
     {
         const bool direction[3] = {true, false, false};
-        controller.obstacleDetected(direction);
-        controller.obstacleSensorDriver.clear();
+        runObstacleCommand(controller, direction, false);
     }
     else if (command == "obstacle_left")
     {
         const bool direction[3] = {false, true, false};
-        controller.obstacleDetected(direction);
-        controller.obstacleSensorDriver.clear();
+        runObstacleCommand(controller, direction, false);
     }
     else if (command == "obstacle_right")
     {
         const bool direction[3] = {false, false, true};
-        controller.obstacleDetected(direction);
-        controller.obstacleSensorDriver.clear();
+        runObstacleCommand(controller, direction, false);
     }
     else if (command == "obstacle_all")
     {
         const bool direction[3] = {true, true, true};
-        controller.obstacleDetected(direction);
-        controller.obstacleSensorDriver.clear();
+        runObstacleCommand(controller, direction, false);
     }
     else if (command == "low_battery")
     {
@@ -319,24 +337,47 @@ int runInteractive()
         case 4:
         {
             const bool direction[3] = {true, false, false};
-            controller.obstacleDetected(direction);
-            controller.obstacleSensorDriver.clear();
+            runObstacleCommand(controller, direction, true);
             break;
         }
         case 5:
+        {
+            const bool direction[3] = {false, true, false};
+            runObstacleCommand(controller, direction, true);
+            break;
+        }
+        case 6:
+        {
+            const bool direction[3] = {false, false, true};
+            runObstacleCommand(controller, direction, true);
+            break;
+        }
+        case 7:
+        {
+            const bool direction[3] = {true, true, true};
+            runObstacleCommand(controller, direction, true);
+            break;
+        }
+        case 8:
             controller.lowBatteryDetected();
             break;
-        case 6:
+        case 9:
             controller.chargeBattery();
             break;
-        case 7:
+        case 10:
             controller.stopCharging();
             break;
-        case 8:
+        case 11:
             controller.timerExpired();
             break;
-        case 9:
+        case 12:
             controller.clockTick();
+            break;
+        case 13:
+            controller.chargingTick();
+            break;
+        case 14:
+            controller.lowBatteryCleared();
             break;
         default:
             std::cout << "Invalid selection\n";
