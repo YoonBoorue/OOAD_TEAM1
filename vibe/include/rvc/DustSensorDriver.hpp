@@ -11,6 +11,8 @@ public:
 
     DustSensorDriver() = default;
 
+    void initialize();
+    void deactivateDustSensor();
     void clear();
 };
 

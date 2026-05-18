@@ -56,7 +56,7 @@ void printMenu()
     std::cout << "\n"
               << "1) Power Button  2) Start Button  3) Dust Detected\n"
               << "4) Obstacle (front)  5) Low Battery  6) Charge Battery\n"
-              << "7) Stop Charging  8) Timer Expired  0) Exit\n"
+              << "7) Stop Charging  8) Timer Expired  9) Clock Tick  0) Exit\n"
               << "> ";
 }
 
@@ -77,8 +77,26 @@ void runCommand(rvc::Controller& controller, const std::string& command)
     }
     else if (command == "obstacle_front")
     {
-        controller.obstacleSensorDriver.front = true;
-        controller.obstacleDetected();
+        const bool direction[3] = {true, false, false};
+        controller.obstacleDetected(direction);
+        controller.obstacleSensorDriver.clear();
+    }
+    else if (command == "obstacle_left")
+    {
+        const bool direction[3] = {false, true, false};
+        controller.obstacleDetected(direction);
+        controller.obstacleSensorDriver.clear();
+    }
+    else if (command == "obstacle_right")
+    {
+        const bool direction[3] = {false, false, true};
+        controller.obstacleDetected(direction);
+        controller.obstacleSensorDriver.clear();
+    }
+    else if (command == "obstacle_all")
+    {
+        const bool direction[3] = {true, true, true};
+        controller.obstacleDetected(direction);
         controller.obstacleSensorDriver.clear();
     }
     else if (command == "low_battery")
@@ -96,6 +114,18 @@ void runCommand(rvc::Controller& controller, const std::string& command)
     else if (command == "timer")
     {
         controller.timerExpired();
+    }
+    else if (command == "charge_tick")
+    {
+        controller.chargingTick();
+    }
+    else if (command == "clock_tick")
+    {
+        controller.clockTick();
+    }
+    else if (command == "low_battery_cleared")
+    {
+        controller.lowBatteryCleared();
     }
     else
     {
@@ -211,10 +241,12 @@ int runInteractive()
             controller.dustDetected();
             break;
         case 4:
-            controller.obstacleSensorDriver.front = true;
-            controller.obstacleDetected();
+        {
+            const bool direction[3] = {true, false, false};
+            controller.obstacleDetected(direction);
             controller.obstacleSensorDriver.clear();
             break;
+        }
         case 5:
             controller.lowBatteryDetected();
             break;
@@ -226,6 +258,9 @@ int runInteractive()
             break;
         case 8:
             controller.timerExpired();
+            break;
+        case 9:
+            controller.clockTick();
             break;
         default:
             std::cout << "Invalid selection\n";

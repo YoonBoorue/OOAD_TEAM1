@@ -13,6 +13,8 @@ public:
 
     ObstacleSensorDriver() = default;
 
+    void initialize();
+    void deactivateObstacleSensor();
     void clear();
     bool hasObstacle() const;
 };

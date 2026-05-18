@@ -18,14 +18,11 @@ ControllerState& stateFor(Controller& controller)
     if (inserted.second)
     {
         controller.currentMode = nullptr;
-        controller.batteryDriver.isCharging = false;
-        controller.batteryDriver.isLowBattery = false;
-        controller.cleanerDriver.isRunning = false;
-        controller.cleanerDriver.isBoosting = false;
-        controller.motorDriver.isRunning = false;
-        controller.motorDriver.direction = Direction::Forward;
-        controller.obstacleSensorDriver.clear();
-        controller.dustSensorDriver.clear();
+        controller.batteryDriver.initialize();
+        controller.cleanerDriver.initialize();
+        controller.motorDriver.initialize();
+        controller.obstacleSensorDriver.initialize();
+        controller.dustSensorDriver.initialize();
     }
 
     return inserted.first->second;
@@ -42,33 +39,12 @@ void deleteMode(OperatingMode* mode)
     delete mode;
 }
 
-void applyModeOutputs(Controller& controller)
-{
-    if (dynamic_cast<NormalMode*>(controller.currentMode) != nullptr)
-    {
-        controller.motorDriver.moveForward();
-        controller.cleanerDriver.start();
-        return;
-    }
-
-    if (dynamic_cast<BoostMode*>(controller.currentMode) != nullptr)
-    {
-        controller.motorDriver.moveForward();
-        controller.cleanerDriver.boost();
-        return;
-    }
-
-    controller.motorDriver.stop();
-    controller.cleanerDriver.stop();
-}
-
 void commitModeTransition(Controller& controller, OperatingMode* previousMode, OperatingMode* nextMode)
 {
     if (nextMode != previousMode)
     {
         deleteMode(previousMode);
         controller.currentMode = nextMode;
-        applyModeOutputs(controller);
     }
 }
 
@@ -83,23 +59,9 @@ bool isBoostMode(const OperatingMode* mode)
     return dynamic_cast<const BoostMode*>(mode) != nullptr;
 }
 
-void moveMotor(MotorDriver& motorDriver, Direction direction)
+bool canStartCharging(const Controller& controller)
 {
-    switch (direction)
-    {
-    case Direction::Forward:
-        motorDriver.moveForward();
-        break;
-    case Direction::Left:
-        motorDriver.turnLeft();
-        break;
-    case Direction::Right:
-        motorDriver.turnRight();
-        break;
-    case Direction::Backward:
-        motorDriver.moveBackward();
-        break;
-    }
+    return controller.currentMode == nullptr || controller.currentMode->canCharge();
 }
 } // namespace
 
@@ -109,11 +71,12 @@ void Controller::powerButtonPressed()
 
     if (!state.power)
     {
-        batteryDriver.isCharging = false;
-        obstacleSensorDriver.clear();
-        dustSensorDriver.clear();
+        batteryDriver.initialize();
+        dustSensorDriver.initialize();
+        cleanerDriver.initialize();
+        motorDriver.initialize();
+        obstacleSensorDriver.initialize();
         currentMode = newMode<StandbyMode>();
-        applyModeOutputs(*this);
         state.power = true;
         return;
     }
@@ -125,7 +88,11 @@ void Controller::powerButtonPressed()
 
     deleteMode(currentMode);
     currentMode = nullptr;
-    applyModeOutputs(*this);
+    batteryDriver.turnOffBattery();
+    obstacleSensorDriver.deactivateObstacleSensor();
+    dustSensorDriver.deactivateDustSensor();
+    motorDriver.stopMoving();
+    cleanerDriver.stopCleaning();
     state.power = false;
 }
 
@@ -147,32 +114,27 @@ void Controller::chargeBattery()
 {
     stateFor(*this);
 
-    if (dynamic_cast<NormalMode*>(currentMode) != nullptr ||
-        dynamic_cast<BoostMode*>(currentMode) != nullptr)
+    if (!canStartCharging(*this))
     {
         return;
     }
 
-    batteryDriver.isCharging = true;
+    batteryDriver.startCharging();
+    chargingTick();
 }
 
 void Controller::stopCharging()
 {
     stateFor(*this);
-    batteryDriver.isCharging = false;
+    batteryDriver.stopCharging();
+
+    if (currentMode == nullptr)
+    {
+        currentMode = newMode<StandbyMode>();
+    }
 }
 
 void Controller::lowBatteryDetected()
-{
-    stateFor(*this);
-
-    deleteMode(currentMode);
-    currentMode = newMode<LowBatteryMode>();
-    batteryDriver.isLowBattery = true;
-    applyModeOutputs(*this);
-}
-
-void Controller::dustDetected()
 {
     stateFor(*this);
 
@@ -182,11 +144,13 @@ void Controller::dustDetected()
     }
 
     OperatingMode* previousMode = currentMode;
-    OperatingMode* nextMode = currentMode->dustDetected(*this);
+    OperatingMode* nextMode = currentMode->lowBatteryDetected(*this);
     commitModeTransition(*this, previousMode, nextMode);
+    batteryDriver.isLowBattery = true;
+    batteryDriver.level = BatteryDriver::LowBatteryThreshold;
 }
 
-void Controller::obstacleDetected()
+void Controller::lowBatteryCleared()
 {
     stateFor(*this);
 
@@ -195,24 +159,73 @@ void Controller::obstacleDetected()
         return;
     }
 
+    OperatingMode* previousMode = currentMode;
+    OperatingMode* nextMode = currentMode->lowBatteryCleared(*this);
+    commitModeTransition(*this, previousMode, nextMode);
+    batteryDriver.isLowBattery = false;
+}
+
+void Controller::dustDetected()
+{
+    stateFor(*this);
+
+    if (currentMode == nullptr || batteryDriver.isCharging)
+    {
+        return;
+    }
+
+    if (!dustSensorDriver.dustDetected || !dustProcessor.shouldBoost(cleanerDriver))
+    {
+        return;
+    }
+
+    OperatingMode* previousMode = currentMode;
+    OperatingMode* nextMode = currentMode->dustDetected(*this);
+    commitModeTransition(*this, previousMode, nextMode);
+}
+
+void Controller::obstacleDetected(const bool direction[3])
+{
+    stateFor(*this);
+
+    if (currentMode == nullptr || direction == nullptr)
+    {
+        return;
+    }
+
     const bool shouldResumeCleaning = cleanerDriver.isRunning && isActiveCleaningMode(currentMode);
     const bool shouldResumeBoosting = cleanerDriver.isBoosting && isBoostMode(currentMode);
-    const Direction direction = obstacleProcessor.decideDirection(obstacleSensorDriver);
 
-    cleanerDriver.stop();
-    moveMotor(motorDriver, direction);
+    obstacleSensorDriver.front = direction[0];
+    obstacleSensorDriver.left = direction[1];
+    obstacleSensorDriver.right = direction[2];
+
+    const Direction selectedDirection = obstacleProcessor.decideDirection(obstacleSensorDriver);
+    cleanerDriver.stopCleaning();
+    currentMode->checkIsMoving(selectedDirection, motorDriver);
 
     if (shouldResumeCleaning)
     {
         if (shouldResumeBoosting)
         {
-            cleanerDriver.boost();
+            cleanerDriver.decideSetting(true);
         }
         else
         {
-            cleanerDriver.start();
+            cleanerDriver.startCleaning();
         }
     }
+}
+
+void Controller::obstacleDetected()
+{
+    const bool direction[3] = {
+        obstacleSensorDriver.front,
+        obstacleSensorDriver.left,
+        obstacleSensorDriver.right,
+    };
+
+    obstacleDetected(direction);
 }
 
 void Controller::timerExpired()
@@ -229,9 +242,77 @@ void Controller::timerExpired()
     commitModeTransition(*this, previousMode, nextMode);
 }
 
+void Controller::timerExpiredNow()
+{
+    timerExpired();
+}
+
+void Controller::chargingTick()
+{
+    stateFor(*this);
+
+    if (!batteryDriver.isCharging)
+    {
+        return;
+    }
+
+    const bool increased = batteryDriver.inclineLV();
+    if (!increased || batteryDriver.isFull())
+    {
+        batteryDriver.stopCharging();
+    }
+
+    if (dynamic_cast<LowBatteryMode*>(currentMode) != nullptr &&
+        batteryDriver.level > BatteryDriver::LowBatteryThreshold)
+    {
+        lowBatteryCleared();
+    }
+}
+
+void Controller::clockTick()
+{
+    stateFor(*this);
+
+    chargingTick();
+
+    if (currentMode == nullptr)
+    {
+        return;
+    }
+
+    if (batteryDriver.isLowBattery &&
+        dynamic_cast<LowBatteryMode*>(currentMode) == nullptr)
+    {
+        lowBatteryDetected();
+        return;
+    }
+
+    if (dustSensorDriver.dustDetected)
+    {
+        dustDetected();
+    }
+
+    if (obstacleSensorDriver.hasObstacle())
+    {
+        obstacleDetected();
+    }
+}
+
+void BatteryDriver::initialize()
+{
+    isCharging = false;
+    isLowBattery = false;
+    level = FullBatteryLevel;
+}
+
 void BatteryDriver::charge()
 {
-    isCharging = true;
+    startCharging();
+}
+
+void BatteryDriver::startCharging()
+{
+    isCharging = !isFull();
 }
 
 void BatteryDriver::stopCharging()
@@ -239,12 +320,57 @@ void BatteryDriver::stopCharging()
     isCharging = false;
 }
 
+void BatteryDriver::turnOffBattery()
+{
+    stopCharging();
+}
+
 void BatteryDriver::setLowBattery(bool lowBattery)
 {
     isLowBattery = lowBattery;
+    if (lowBattery)
+    {
+        level = LowBatteryThreshold;
+    }
+}
+
+bool BatteryDriver::inclineLV()
+{
+    return inclineLevel();
+}
+
+bool BatteryDriver::inclineLevel()
+{
+    if (isFull())
+    {
+        return false;
+    }
+
+    level += 10;
+    if (level > FullBatteryLevel)
+    {
+        level = FullBatteryLevel;
+    }
+
+    return true;
+}
+
+bool BatteryDriver::isFull() const
+{
+    return level >= FullBatteryLevel;
+}
+
+void CleanerDriver::initialize()
+{
+    stopCleaning();
 }
 
 void CleanerDriver::start()
+{
+    startCleaning();
+}
+
+void CleanerDriver::startCleaning()
 {
     isRunning = true;
     isBoosting = false;
@@ -252,19 +378,35 @@ void CleanerDriver::start()
 
 void CleanerDriver::stop()
 {
+    stopCleaning();
+}
+
+void CleanerDriver::stopCleaning()
+{
     isRunning = false;
     isBoosting = false;
 }
 
 void CleanerDriver::boost()
 {
-    isRunning = true;
-    isBoosting = true;
+    decideSetting(true);
 }
 
 void CleanerDriver::normal()
 {
-    start();
+    decideSetting(false);
+}
+
+void CleanerDriver::decideSetting(bool boostEnabled)
+{
+    isRunning = true;
+    isBoosting = boostEnabled;
+}
+
+void MotorDriver::initialize()
+{
+    isRunning = false;
+    direction = Direction::Forward;
 }
 
 void MotorDriver::start(Direction nextDirection)
@@ -274,6 +416,11 @@ void MotorDriver::start(Direction nextDirection)
 }
 
 void MotorDriver::stop()
+{
+    stopMoving();
+}
+
+void MotorDriver::stopMoving()
 {
     isRunning = false;
 }
@@ -298,6 +445,16 @@ void MotorDriver::moveBackward()
     start(Direction::Backward);
 }
 
+void ObstacleSensorDriver::initialize()
+{
+    clear();
+}
+
+void ObstacleSensorDriver::deactivateObstacleSensor()
+{
+    clear();
+}
+
 void ObstacleSensorDriver::clear()
 {
     front = false;
@@ -308,6 +465,16 @@ void ObstacleSensorDriver::clear()
 bool ObstacleSensorDriver::hasObstacle() const
 {
     return front || left || right;
+}
+
+void DustSensorDriver::initialize()
+{
+    clear();
+}
+
+void DustSensorDriver::deactivateDustSensor()
+{
+    clear();
 }
 
 void DustSensorDriver::clear()

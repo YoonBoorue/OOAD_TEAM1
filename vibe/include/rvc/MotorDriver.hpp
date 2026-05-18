@@ -14,8 +14,10 @@ public:
 
     MotorDriver() = default;
 
+    void initialize();
     void start(Direction nextDirection);
     void stop();
+    void stopMoving();
     void moveForward();
     void turnLeft();
     void turnRight();

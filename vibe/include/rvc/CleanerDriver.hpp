@@ -12,10 +12,14 @@ public:
 
     CleanerDriver() = default;
 
+    void initialize();
     void start();
+    void startCleaning();
     void stop();
+    void stopCleaning();
     void boost();
     void normal();
+    void decideSetting(bool boostEnabled);
 };
 
 } // namespace rvc

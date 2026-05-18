@@ -38,9 +38,14 @@ public:
     void chargeBattery();
     void stopCharging();
     void lowBatteryDetected();
+    void lowBatteryCleared();
     void dustDetected();
+    void obstacleDetected(const bool direction[3]);
     void obstacleDetected();
     void timerExpired();
+    void timerExpiredNow();
+    void chargingTick();
+    void clockTick();
 };
 
 } // namespace rvc
