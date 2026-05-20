@@ -1,0 +1,15 @@
+# N25: Dust event while charging is ignored by the current implementation.
+power
+low_battery
+low_battery_cleared
+charge
+expect_mode StandbyMode
+expect_charging on
+start
+expect_mode NormalMode
+expect_charging on
+dust
+expect_mode NormalMode
+expect_charging on
+expect_cleaner on
+expect_boost off

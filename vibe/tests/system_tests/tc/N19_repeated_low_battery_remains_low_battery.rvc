@@ -1,0 +1,9 @@
+# N19: Repeated low battery in LowBatteryMode remains LowBatteryMode.
+power
+start
+low_battery
+low_battery
+expect_mode LowBatteryMode
+expect_motor off
+expect_cleaner off
+expect_boost off

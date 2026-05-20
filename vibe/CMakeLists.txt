@@ -5,7 +5,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-option(VIBE_BUILD_TESTS "Build GoogleTest-based simulator tests" OFF)
+option(VIBE_BUILD_TESTS "Build GoogleTest-based tests" ON)
+option(VIBE_BUILD_SYSTEM_TESTS "Register simulator script system tests" ON)
 
 set(RVC_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
@@ -73,6 +74,23 @@ endif()
 
 include(CTest)
 
+if (BUILD_TESTING AND VIBE_BUILD_SYSTEM_TESTS)
+    file(GLOB VIBE_SYSTEM_TEST_SCRIPTS CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/system_tests/tc/*.rvc"
+    )
+
+    foreach(_VIBE_SYSTEM_TEST_SCRIPT IN LISTS VIBE_SYSTEM_TEST_SCRIPTS)
+        get_filename_component(_VIBE_SYSTEM_TEST_NAME "${_VIBE_SYSTEM_TEST_SCRIPT}" NAME_WE)
+        add_test(
+            NAME "system_${_VIBE_SYSTEM_TEST_NAME}"
+            COMMAND rvc_simulator --script "${_VIBE_SYSTEM_TEST_SCRIPT}"
+        )
+        set_tests_properties("system_${_VIBE_SYSTEM_TEST_NAME}" PROPERTIES
+            LABELS "system"
+        )
+    endforeach()
+endif()
+
 if (BUILD_TESTING AND VIBE_BUILD_TESTS)
     find_package(GTest QUIET)
 
@@ -97,6 +115,25 @@ if (BUILD_TESTING AND VIBE_BUILD_TESTS)
 
             FetchContent_MakeAvailable(googletest)
         endif()
+    endif()
+
+    file(GLOB_RECURSE VIBE_UNIT_TEST_SOURCES CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/unit_tests/*.cpp"
+    )
+
+    if (VIBE_UNIT_TEST_SOURCES)
+        add_executable(rvc_vibe_tests
+            ${VIBE_UNIT_TEST_SOURCES}
+        )
+
+        target_link_libraries(rvc_vibe_tests
+            PRIVATE
+                vibe_rvc_core
+                GTest::gtest_main
+        )
+
+        include(GoogleTest)
+        gtest_discover_tests(rvc_vibe_tests)
     endif()
 
     add_executable(rvc_simulator_tests

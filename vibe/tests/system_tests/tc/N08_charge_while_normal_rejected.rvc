@@ -1,0 +1,11 @@
+# N08: Charge while NormalMode is rejected.
+power
+low_battery
+low_battery_cleared
+start
+charge
+expect_mode NormalMode
+expect_charging off
+expect_motor on
+expect_cleaner on
+expect_boost off

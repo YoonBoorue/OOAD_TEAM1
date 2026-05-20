@@ -1,0 +1,16 @@
+# N29: Charge after entering cleaning mode remains rejected.
+power
+low_battery
+low_battery_cleared
+start
+expect_mode NormalMode
+charge
+expect_mode NormalMode
+expect_charging off
+expect_motor on
+expect_cleaner on
+start
+expect_mode StandbyMode
+charge
+expect_mode StandbyMode
+expect_charging on

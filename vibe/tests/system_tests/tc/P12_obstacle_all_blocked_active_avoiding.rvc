@@ -1,0 +1,9 @@
+# P12: Obstacle all blocked keeps the system active while avoiding.
+power
+start
+obstacle_all
+expect_mode NormalMode
+expect_motor on
+expect_cleaner on
+expect_boost off
+expect_direction Backward
