@@ -27,14 +27,14 @@ const char *directionName(rvc::Direction direction)
 {
     switch (direction)
     {
-    case rvc::Direction::FRONT:
-        return "FRONT";
-    case rvc::Direction::LEFT:
-        return "LEFT";
-    case rvc::Direction::RIGHT:
-        return "RIGHT";
-    case rvc::Direction::BACK:
-        return "BACK";
+    case rvc::Direction::Forward:
+        return "Forward";
+    case rvc::Direction::Left:
+        return "Left";
+    case rvc::Direction::Right:
+        return "Right";
+    case rvc::Direction::Backward:
+        return "Backward";
     }
 
     return "UNKNOWN";
@@ -44,13 +44,13 @@ Position unitVector(rvc::Direction direction)
 {
     switch (direction)
     {
-    case rvc::Direction::FRONT:
+    case rvc::Direction::Forward:
         return Position{0, -1};
-    case rvc::Direction::LEFT:
+    case rvc::Direction::Left:
         return Position{-1, 0};
-    case rvc::Direction::RIGHT:
+    case rvc::Direction::Right:
         return Position{1, 0};
-    case rvc::Direction::BACK:
+    case rvc::Direction::Backward:
         return Position{0, 1};
     }
 
@@ -66,34 +66,34 @@ rvc::Direction leftOf(rvc::Direction direction)
 {
     switch (direction)
     {
-    case rvc::Direction::FRONT:
-        return rvc::Direction::LEFT;
-    case rvc::Direction::LEFT:
-        return rvc::Direction::BACK;
-    case rvc::Direction::RIGHT:
-        return rvc::Direction::FRONT;
-    case rvc::Direction::BACK:
-        return rvc::Direction::RIGHT;
+    case rvc::Direction::Forward:
+        return rvc::Direction::Left;
+    case rvc::Direction::Left:
+        return rvc::Direction::Backward;
+    case rvc::Direction::Right:
+        return rvc::Direction::Forward;
+    case rvc::Direction::Backward:
+        return rvc::Direction::Right;
     }
 
-    return rvc::Direction::FRONT;
+    return rvc::Direction::Forward;
 }
 
 rvc::Direction rightOf(rvc::Direction direction)
 {
     switch (direction)
     {
-    case rvc::Direction::FRONT:
-        return rvc::Direction::RIGHT;
-    case rvc::Direction::LEFT:
-        return rvc::Direction::FRONT;
-    case rvc::Direction::RIGHT:
-        return rvc::Direction::BACK;
-    case rvc::Direction::BACK:
-        return rvc::Direction::LEFT;
+    case rvc::Direction::Forward:
+        return rvc::Direction::Right;
+    case rvc::Direction::Left:
+        return rvc::Direction::Forward;
+    case rvc::Direction::Right:
+        return rvc::Direction::Backward;
+    case rvc::Direction::Backward:
+        return rvc::Direction::Left;
     }
 
-    return rvc::Direction::FRONT;
+    return rvc::Direction::Forward;
 }
 
 } // namespace sim

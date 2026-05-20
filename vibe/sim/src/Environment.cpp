@@ -15,6 +15,7 @@ namespace
 constexpr int MotorDrain = 1;
 constexpr int CleanerDrain = 1;
 constexpr int BoostDrain = 1;
+constexpr int MinBatteryLevel = 0;
 
 } // namespace
 
@@ -22,8 +23,8 @@ Environment::Environment(Room room, Pose initialPose, int initialBatteryLevel)
     : room_(std::move(room)),
       pose_(initialPose),
       batteryLevel_(std::clamp(initialBatteryLevel,
-                               rvc::BatteryDriver::MinLevel,
-                               rvc::BatteryDriver::MaxLevel)),
+                               MinBatteryLevel,
+                               rvc::BatteryDriver::FullBatteryLevel)),
       cleanedCells_(0)
 {
 }
@@ -107,7 +108,7 @@ void Environment::drainBattery(const ActuatorSnapshot &actuators)
         drain += BoostDrain;
     }
 
-    batteryLevel_ = std::max(rvc::BatteryDriver::MinLevel, batteryLevel_ - drain);
+    batteryLevel_ = std::max(MinBatteryLevel, batteryLevel_ - drain);
 }
 
 } // namespace sim

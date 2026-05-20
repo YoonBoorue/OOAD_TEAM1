@@ -203,6 +203,7 @@ int runScript(const std::string& path)
     }
 
     rvc::Controller controller;
+    controller.clockTick();
     std::string line;
     int failures = 0;
 
@@ -309,6 +310,7 @@ int runScript(const std::string& path)
 int runInteractive()
 {
     rvc::Controller controller;
+    controller.clockTick();
 
     while (true)
     {
