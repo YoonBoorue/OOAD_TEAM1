@@ -21,7 +21,7 @@ struct ActuatorSnapshot
 {
     bool motorMoving = false;
     bool motorForward = true;
-    rvc::Direction motorDirection = rvc::Direction::FRONT;
+    rvc::Direction motorDirection = rvc::Direction::Forward;
     bool cleanerRunning = false;
     bool cleanerBoost = false;
 };
