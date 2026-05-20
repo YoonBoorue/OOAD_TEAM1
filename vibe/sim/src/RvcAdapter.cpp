@@ -52,6 +52,7 @@ RvcAdapter::RvcAdapter()
     : controller_(),
       boostTicks_(0)
 {
+    controller_.clockTick();
 }
 
 void RvcAdapter::powerOnAndStart()
@@ -135,12 +136,17 @@ void RvcAdapter::stopCharging()
     controller_.stopCharging();
 }
 
+void RvcAdapter::setBatteryLevel(int batteryLevel)
+{
+    controller_.batteryDriver.level = batteryLevel;
+}
+
 ActuatorSnapshot RvcAdapter::actuators() const
 {
     ActuatorSnapshot snapshot;
     snapshot.motorMoving = controller_.motorDriver.isRunning;
-    snapshot.motorForward = true;
     snapshot.motorDirection = controller_.motorDriver.direction;
+    snapshot.motorForward = controller_.motorDriver.direction != rvc::Direction::Backward;
     snapshot.cleanerRunning = controller_.cleanerDriver.isRunning;
     snapshot.cleanerBoost = controller_.cleanerDriver.isBoosting;
     return snapshot;

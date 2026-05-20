@@ -34,6 +34,7 @@ public:
     const Room &room() const;
     const Pose &pose() const;
     int batteryLevel() const;
+    void setBatteryLevel(int batteryLevel);
     int cleanedCells() const;
 
     SensorSnapshot sense(rvc::Direction heading) const;

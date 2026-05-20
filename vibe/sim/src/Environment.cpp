@@ -44,6 +44,13 @@ int Environment::batteryLevel() const
     return batteryLevel_;
 }
 
+void Environment::setBatteryLevel(int batteryLevel)
+{
+    batteryLevel_ = std::clamp(batteryLevel,
+                               MinBatteryLevel,
+                               rvc::BatteryDriver::FullBatteryLevel);
+}
+
 int Environment::cleanedCells() const
 {
     return cleanedCells_;
@@ -72,11 +79,6 @@ void Environment::applyActuators(const ActuatorSnapshot &actuators)
     if (actuators.motorMoving)
     {
         Position delta = unitVector(actuators.motorDirection);
-        if (!actuators.motorForward)
-        {
-            delta = opposite(delta);
-        }
-
         const Position next = pose_.position + delta;
         if (!room_.isBlocked(next))
         {

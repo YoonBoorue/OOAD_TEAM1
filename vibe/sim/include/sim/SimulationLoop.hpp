@@ -31,6 +31,9 @@ public:
 
 private:
     void dispatchKey(char key);
+    void syncRvcBatteryFromEnvironment();
+    void syncEnvironmentBatteryFromRvc();
+    void advanceCharging();
     RenderFrame makeFrame(const ActuatorSnapshot &actuators) const;
 
     Scenario scenario_;
