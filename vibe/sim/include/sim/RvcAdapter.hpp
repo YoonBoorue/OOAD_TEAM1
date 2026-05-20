@@ -21,6 +21,7 @@ public:
     void chargeBattery();
     void chargingTick();
     void stopCharging();
+    void setBatteryLevel(int batteryLevel);
 
     ActuatorSnapshot actuators() const;
     rvc::Direction heading() const;

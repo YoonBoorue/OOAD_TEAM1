@@ -40,6 +40,8 @@ bool SimulationLoop::tick()
 {
     start();
 
+    const bool wasChargingAtTickStart = chargingActive_;
+
     if (keyPoller_)
     {
         const std::optional<char> key = keyPoller_();
@@ -54,13 +56,14 @@ bool SimulationLoop::tick()
         return false;
     }
 
-    if (chargingActive_)
+    if (wasChargingAtTickStart && chargingActive_)
     {
-        rvc_.chargingTick();
+        advanceCharging();
     }
 
     const SensorSnapshot sensors = scenario_.environment.sense(rvc_.heading());
     rvc_.feedSensors(sensors);
+    chargingActive_ = rvc_.isCharging();
 
     const ActuatorSnapshot actuators = rvc_.actuators();
     scenario_.environment.applyActuators(actuators);
@@ -141,12 +144,14 @@ void SimulationLoop::dispatchKey(char key)
         if (chargingActive_)
         {
             rvc_.stopCharging();
-            chargingActive_ = false;
+            chargingActive_ = rvc_.isCharging();
         }
         else
         {
+            syncRvcBatteryFromEnvironment();
             rvc_.chargeBattery();
-            chargingActive_ = true;
+            syncEnvironmentBatteryFromRvc();
+            chargingActive_ = rvc_.isCharging();
         }
         break;
     case 'q':
@@ -156,6 +161,24 @@ void SimulationLoop::dispatchKey(char key)
     default:
         break;
     }
+}
+
+void SimulationLoop::syncRvcBatteryFromEnvironment()
+{
+    rvc_.setBatteryLevel(scenario_.environment.batteryLevel());
+}
+
+void SimulationLoop::syncEnvironmentBatteryFromRvc()
+{
+    scenario_.environment.setBatteryLevel(rvc_.batteryLevel());
+}
+
+void SimulationLoop::advanceCharging()
+{
+    syncRvcBatteryFromEnvironment();
+    rvc_.chargingTick();
+    syncEnvironmentBatteryFromRvc();
+    chargingActive_ = rvc_.isCharging();
 }
 
 RenderFrame SimulationLoop::makeFrame(const ActuatorSnapshot &actuators) const
@@ -177,7 +200,7 @@ RenderFrame SimulationLoop::makeFrame(const ActuatorSnapshot &actuators) const
     frame.motorDirection = directionName(actuators.motorDirection);
     frame.cleanerRunning = actuators.cleanerRunning;
     frame.cleanerBoost = actuators.cleanerBoost;
-    frame.chargingActive = chargingActive_;
+    frame.chargingActive = rvc_.isCharging();
     frame.cleanedCells = scenario_.environment.cleanedCells();
     frame.totalDustCells = frame.cleanedCells + room.remainingDust();
     return frame;

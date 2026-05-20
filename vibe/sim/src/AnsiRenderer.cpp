@@ -31,15 +31,15 @@ bool containsPosition(const std::vector<Position> &positions, Position target)
 
 char robotGlyph(const RenderFrame &frame)
 {
-    if (frame.motorDirection == "LEFT")
+    if (frame.motorDirection == "Left")
     {
         return '<';
     }
-    if (frame.motorDirection == "RIGHT")
+    if (frame.motorDirection == "Right")
     {
         return '>';
     }
-    if (frame.motorDirection == "BACK")
+    if (frame.motorDirection == "Backward")
     {
         return 'v';
     }

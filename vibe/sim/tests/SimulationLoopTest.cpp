@@ -1,5 +1,6 @@
 #include "sim/MapLoader.hpp"
 #include "sim/Renderer.hpp"
+#include "sim/RvcAdapter.hpp"
 #include "sim/SimulationLoop.hpp"
 
 #include <gtest/gtest.h>
@@ -7,6 +8,7 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace
@@ -17,6 +19,24 @@ sim::SimulationLoop::KeyPoller noKeys()
     return []() -> std::optional<char> {
         return std::nullopt;
     };
+}
+
+class RecordingRenderer final : public sim::Renderer
+{
+public:
+    void render(const sim::RenderFrame &frame) override
+    {
+        lastFrame = frame;
+    }
+
+    sim::RenderFrame lastFrame;
+};
+
+sim::Scenario makeScenarioWithBattery(int batteryLevel)
+{
+    sim::Room room(3, 3);
+    room.setDust(sim::Position{2, 2});
+    return sim::Scenario{"battery-test", sim::Environment(std::move(room), sim::Pose{{1, 1}}, batteryLevel)};
 }
 
 } // namespace
@@ -63,6 +83,108 @@ TEST(SimulationLoopTest, ScriptedPowerAndStartKeysAllowCleaning)
 
     EXPECT_GE(simulation.cleanedCells(), 1);
     EXPECT_NE(simulation.modeName(), "StandbyMode");
+}
+
+TEST(SimulationLoopTest, ChargingKeyInStandbyUpdatesEnvironmentBattery)
+{
+    std::vector<std::optional<char>> keys = {'p', 'c', std::nullopt};
+    std::size_t index = 0;
+    auto poller = [&keys, &index]() -> std::optional<char> {
+        if (index >= keys.size())
+        {
+            return std::nullopt;
+        }
+
+        return keys[index++];
+    };
+
+    RecordingRenderer renderer;
+    sim::SimulationLoop simulation(makeScenarioWithBattery(50), renderer, poller, 0, false);
+
+    simulation.runForTicks(2);
+
+    EXPECT_EQ(simulation.batteryLevel(), 60);
+    EXPECT_TRUE(renderer.lastFrame.chargingActive);
+
+    simulation.runForTicks(1);
+
+    EXPECT_EQ(simulation.batteryLevel(), 70);
+    EXPECT_TRUE(renderer.lastFrame.chargingActive);
+}
+
+TEST(SimulationLoopTest, ChargingKeyWhileOffUsesEnvironmentBattery)
+{
+    std::vector<std::optional<char>> keys = {'c'};
+    std::size_t index = 0;
+    auto poller = [&keys, &index]() -> std::optional<char> {
+        if (index >= keys.size())
+        {
+            return std::nullopt;
+        }
+
+        return keys[index++];
+    };
+
+    RecordingRenderer renderer;
+    sim::SimulationLoop simulation(makeScenarioWithBattery(50), renderer, poller, 0, false);
+
+    simulation.runForTicks(1);
+
+    EXPECT_EQ(simulation.batteryLevel(), 60);
+    EXPECT_TRUE(renderer.lastFrame.chargingActive);
+    EXPECT_EQ(renderer.lastFrame.modeName, "Off");
+}
+
+TEST(SimulationLoopTest, ChargeRejectedInActiveCleaningDoesNotShowCharging)
+{
+    std::vector<std::optional<char>> keys = {'c'};
+    std::size_t index = 0;
+    auto poller = [&keys, &index]() -> std::optional<char> {
+        if (index >= keys.size())
+        {
+            return std::nullopt;
+        }
+
+        return keys[index++];
+    };
+
+    RecordingRenderer renderer;
+    sim::SimulationLoop simulation(makeScenarioWithBattery(50), renderer, poller, 0);
+
+    simulation.runForTicks(1);
+
+    EXPECT_FALSE(renderer.lastFrame.chargingActive);
+    EXPECT_LT(simulation.batteryLevel(), 50);
+}
+
+TEST(SimulationLoopTest, BackwardActuatorMovesRobotBackward)
+{
+    sim::Room room(3, 3);
+    sim::Environment environment(std::move(room), sim::Pose{{1, 1}}, 100);
+    sim::ActuatorSnapshot actuators;
+    actuators.motorMoving = true;
+    actuators.motorForward = false;
+    actuators.motorDirection = rvc::Direction::Backward;
+
+    environment.applyActuators(actuators);
+
+    EXPECT_EQ(environment.pose().position.x, 1);
+    EXPECT_EQ(environment.pose().position.y, 2);
+}
+
+TEST(SimulationLoopTest, RvcAdapterMarksBackwardCommandAsNotForward)
+{
+    sim::RvcAdapter adapter;
+    adapter.powerOnAndStart();
+
+    sim::SensorSnapshot sensors;
+    sensors.obstacleBlocked = {true, true, true};
+    adapter.feedSensors(sensors);
+
+    const sim::ActuatorSnapshot actuators = adapter.actuators();
+    EXPECT_TRUE(actuators.motorMoving);
+    EXPECT_FALSE(actuators.motorForward);
+    EXPECT_EQ(actuators.motorDirection, rvc::Direction::Backward);
 }
 
 TEST(MapLoaderTest, MalformedMapReportsParseError)
