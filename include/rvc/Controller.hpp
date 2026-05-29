@@ -58,7 +58,7 @@ namespace rvc
         void lowBatteryCleared();
 
         void dustDetected();
-        void obstacleDetected(const bool direction[3]);
+        void obstacleDetected(const bool direction[2]);
 
         /////////////////////////////////////////////////
         // Test / simulator accessors

@@ -1,13 +1,12 @@
 # TC31 : ObstacleDetected8
-# Precondition : NormalMode, forward=true
-# Action : left + right obstacle detected, front clear
-# Expected : no change, keep moving forward
+# Precondition : NormalMode, motorDirection=FRONT, forward=true
+# Action : left obstacle detected, front clear
+# Expected : direction unchanged, keep moving forward
 power
 start
 expect mode NormalMode
-expect motorForward true
 expect motorDirection FRONT
-obstacle 0 1 1
+obstacle 0 1
 expect mode NormalMode
 expect cleaner on
 expect motor moving

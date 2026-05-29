@@ -195,18 +195,16 @@ namespace rvc
         }
     }
 
-    void Controller::obstacleDetected(const bool direction[3])
+    void Controller::obstacleDetected(const bool direction[2])
     {
         if (currentMode == nullptr || direction == nullptr)
         {
             return;
         }
 
-        std::array<bool, 3> dir = {
+        std::array<bool, 2> dir = {
             direction[0],
-            direction[1],
-            direction[2]};
-
+            direction[1]};
         obstacleProcessor->decideDirection(dir, *currentMode, *motorDriver);
     }
 

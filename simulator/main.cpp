@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "rvc/BatteryDriver.hpp"
 #include "rvc/Controller.hpp"
 #include "rvc/Modes.hpp"
 
@@ -91,7 +92,7 @@ namespace
             << "  clear-low-battery                 Clear low battery mode manually\n"
             << "  dust                              Trigger dust detection\n"
             << "  timer-expired                     Fire timer expiry synchronously\n"
-            << "  obstacle <front> <left> <right>   Trigger obstacle detection. 1/blocked, 0/clear\n"
+            << "  obstacle <front> <left>           Trigger obstacle detection. 1/blocked, 0/clear\n"
             << "  expect <field> <value>            Assert state in CLI script\n"
             << "  exit                              Exit simulator\n"
             << "\n"
@@ -175,11 +176,16 @@ namespace
         {
             switch (controller.motorDirection())
             {
-            case rvc::Direction::FRONT: return "FRONT";
-            case rvc::Direction::LEFT:  return "LEFT";
-            case rvc::Direction::RIGHT: return "RIGHT";
-            case rvc::Direction::BACK:  return "BACK";
-            default:                    return "UNKNOWN";
+            case rvc::Direction::FRONT:
+                return "FRONT";
+            case rvc::Direction::LEFT:
+                return "LEFT";
+            case rvc::Direction::RIGHT:
+                return "RIGHT";
+            case rvc::Direction::BACK:
+                return "BACK";
+            default:
+                return "UNKNOWN";
             }
         }
 
@@ -223,17 +229,27 @@ namespace
         std::cout << "-----------------------------------\n";
         std::cout << "  Mode    : " << controller.currentModeName() << "\n";
         std::cout << "  Battery : " << controller.batteryLevel() << "%";
-        if (controller.isCharging()) { std::cout << " (Charging)"; }
+        if (controller.isCharging())
+        {
+            std::cout << " (Charging)";
+        }
         std::cout << "\n";
         if (controller.isMotorMoving())
         {
-            const std::string dirStr = [&]() -> std::string {
-                switch (controller.motorDirection()) {
-                    case rvc::Direction::FRONT: return "FRONT";
-                    case rvc::Direction::LEFT:  return "LEFT";
-                    case rvc::Direction::RIGHT: return "RIGHT";
-                    case rvc::Direction::BACK:  return "BACK";
-                    default:                    return "UNKNOWN";
+            const std::string dirStr = [&]() -> std::string
+            {
+                switch (controller.motorDirection())
+                {
+                case rvc::Direction::FRONT:
+                    return "FRONT";
+                case rvc::Direction::LEFT:
+                    return "LEFT";
+                case rvc::Direction::RIGHT:
+                    return "RIGHT";
+                case rvc::Direction::BACK:
+                    return "BACK";
+                default:
+                    return "UNKNOWN";
                 }
             }();
             std::cout << "  Motor   : " << dirStr
@@ -321,26 +337,59 @@ namespace
         }
     }
 
-    void handleLowBattery(rvc::Controller &controller)
+    void handleBatteryIncrease(rvc::Controller &controller)
     {
-        if (!controller.isPowerOn())
+        int prev = controller.batteryLevel();
+        int newLevel = std::min(prev + 5, 100);
+
+        if (newLevel == prev)
         {
-            std::cout << "[Battery] No effect: Power is off\n";
+            std::cout << "[Battery] Already at 100%\n";
             return;
         }
 
-        bool wasCleaning = controller.isCleanerCleaning();
-        bool wasMoving   = controller.isMotorMoving();
-        controller.lowBatteryDetected();
+        controller.setBatteryLevel(newLevel);
+        std::cout << "[Battery] " << prev << "% → " << newLevel << "%\n";
 
-        std::cout << "[Battery] Low Battery Detected! → " << controller.currentModeName() << "\n";
-        if (wasCleaning && !controller.isCleanerCleaning())
+        if (controller.isPowerOn() &&
+            controller.currentModeKind() == rvc::ModeKind::LowBattery &&
+            newLevel > rvc::BatteryDriver::LowBatteryThreshold)
         {
-            std::cout << "[Cleaner] Stop Cleaning\n";
+            controller.lowBatteryCleared();
+            std::cout << "[Battery] Low battery cleared → " << controller.currentModeName() << "\n";
         }
-        if (wasMoving && !controller.isMotorMoving())
+    }
+
+    void handleBatteryDecrease(rvc::Controller &controller)
+    {
+        int prev = controller.batteryLevel();
+        int newLevel = std::max(prev - 5, 0);
+
+        if (newLevel == prev)
         {
-            std::cout << "[Motor] Stopped\n";
+            std::cout << "[Battery] Already at 0%\n";
+            return;
+        }
+
+        controller.setBatteryLevel(newLevel);
+        std::cout << "[Battery] " << prev << "% → " << newLevel << "%\n";
+
+        if (controller.isPowerOn() &&
+            controller.currentModeKind() != rvc::ModeKind::LowBattery &&
+            newLevel <= rvc::BatteryDriver::LowBatteryThreshold)
+        {
+            bool wasCleaning = controller.isCleanerCleaning();
+            bool wasMoving = controller.isMotorMoving();
+            controller.lowBatteryDetected();
+            std::cout << "[Battery] Low Battery! → " << controller.currentModeName() << "\n";
+            if (wasCleaning && !controller.isCleanerCleaning())
+            {
+                std::cout << "[Cleaner] Stop Cleaning\n";
+            }
+            if (wasMoving && !controller.isMotorMoving())
+            {
+                std::cout << "[Motor] Stopped\n";
+            }
         }
     }
 
@@ -352,64 +401,58 @@ namespace
             return;
         }
 
-        std::cout << "  Input [front,left,right] (e.g. [1,0,0]): ";
+        std::cout << "  Input [front,left] (e.g. [1,0]): ";
         std::string token;
-        if (!(std::cin >> token)) { return; }
-
-        // strip brackets
-        for (char &c : token) { if (c == '[' || c == ']') { c = ' '; } }
-        std::replace(token.begin(), token.end(), ',', ' ');
-
-        std::istringstream iss(token);
-        int f = 0, l = 0, r = 0;
-        if (!(iss >> f >> l >> r))
+        if (!(std::cin >> token))
         {
-            std::cout << "[Error] Invalid format. Use [front,left,right] e.g. [1,0,0]\n";
             return;
         }
 
-        bool dir[3] = { f != 0, l != 0, r != 0 };
+        // strip brackets
+        for (char &c : token)
+        {
+            if (c == '[' || c == ']')
+            {
+                c = ' ';
+            }
+        }
+        std::replace(token.begin(), token.end(), ',', ' ');
+
+        std::istringstream iss(token);
+        int f = 0, l = 0;
+        if (!(iss >> f >> l))
+        {
+            std::cout << "[Error] Invalid format. Use [front,left] e.g. [1,0]\n";
+            return;
+        }
+
+        bool dir[2] = {f != 0, l != 0};
 
         std::cout << "\n[Obstacle Detected]"
                   << " front=" << (dir[0] ? "blocked" : "clear")
-                  << " left="  << (dir[1] ? "blocked" : "clear")
-                  << " right=" << (dir[2] ? "blocked" : "clear") << "\n";
+                  << " left=" << (dir[1] ? "blocked" : "clear") << "\n";
 
         controller.obstacleDetected(dir);
 
-        const std::string dirStr = [&]() -> std::string {
-            switch (controller.motorDirection()) {
-                case rvc::Direction::FRONT: return "FRONT";
-                case rvc::Direction::LEFT:  return "LEFT";
-                case rvc::Direction::RIGHT: return "RIGHT";
-                case rvc::Direction::BACK:  return "BACK";
-                default:                    return "UNKNOWN";
+        const std::string dirStr = [&]() -> std::string
+        {
+            switch (controller.motorDirection())
+            {
+            case rvc::Direction::FRONT:
+                return "FRONT";
+            case rvc::Direction::LEFT:
+                return "LEFT";
+            case rvc::Direction::RIGHT:
+                return "RIGHT";
+            case rvc::Direction::BACK:
+                return "BACK";
+            default:
+                return "UNKNOWN";
             }
         }();
 
         std::cout << "[Motor] Direction: " << dirStr
                   << ", Forward: " << (controller.isMotorForward() ? "true" : "false") << "\n";
-    }
-
-    void handleCharge(rvc::Controller &controller)
-    {
-        int prevLevel = controller.batteryLevel();
-        controller.chargeBattery();
-
-        if (controller.batteryLevel() > prevLevel)
-        {
-            std::cout << "[Battery] Charging... " << prevLevel << "% → "
-                      << controller.batteryLevel() << "%\n";
-            if (controller.batteryLevel() == 100)
-            {
-                std::cout << "[Battery] Fully Charged!\n";
-            }
-        }
-        else
-        {
-            std::cout << "[Battery] Cannot charge in current mode ("
-                      << controller.currentModeName() << ")\n";
-        }
     }
 
     void runInteractiveMenu(rvc::Controller &controller)
@@ -424,26 +467,42 @@ namespace
             std::cout << "1. Power " << (controller.isPowerOn() ? "Off" : "On") << "\n";
             std::cout << "2. " << (controller.isCleanerCleaning() ? "Stop" : "Start") << " Cleaning\n";
             std::cout << "3. Dust Detected\n";
-            std::cout << "4. Low Battery\n";
-            std::cout << "5. Charge Battery\n";
+            std::cout << "4. Battery +5% (Increase)\n";
+            std::cout << "5. Battery -5% (Decrease)\n";
             std::cout << "6. Obstacle Detected\n";
             std::cout << "0. Exit\n";
             std::cout << "Select: ";
 
             int choice;
-            if (!(std::cin >> choice)) { break; }
+            if (!(std::cin >> choice))
+            {
+                break;
+            }
 
             std::cout << "\n";
 
             switch (choice)
             {
-            case 0: return;
-            case 1: handlePower(controller);      break;
-            case 2: handleStart(controller);      break;
-            case 3: handleDust(controller);       break;
-            case 4: handleLowBattery(controller); break;
-            case 5: handleCharge(controller);     break;
-            case 6: handleObstacle(controller);   break;
+            case 0:
+                return;
+            case 1:
+                handlePower(controller);
+                break;
+            case 2:
+                handleStart(controller);
+                break;
+            case 3:
+                handleDust(controller);
+                break;
+            case 4:
+                handleBatteryIncrease(controller);
+                break;
+            case 5:
+                handleBatteryDecrease(controller);
+                break;
+            case 6:
+                handleObstacle(controller);
+                break;
             default:
                 std::cout << "[Error] Please enter 0-6.\n";
                 break;
@@ -627,16 +686,16 @@ int main(int argc, char *argv[])
 
         if (command == "obstacle")
         {
-            if (tokens.size() != 4)
+            if (tokens.size() != 3)
             {
-                std::cout << "ERROR line=" << lineNo << " obstacle command requires front left right values\n";
+                std::cout << "ERROR line=" << lineNo << " obstacle command requires front left values\n";
                 failed = true;
                 continue;
             }
 
-            bool blocked[3] = {false, false, false};
+            bool blocked[2] = {false, false};
             bool parsedAll = true;
-            for (int i = 0; i < 3; ++i)
+            for (int i = 0; i < 2; ++i)
             {
                 if (!parseBoolToken(tokens[static_cast<std::size_t>(i + 1)], blocked[i]))
                 {
@@ -654,8 +713,7 @@ int main(int argc, char *argv[])
 
             controller.obstacleDetected(blocked);
             std::cout << "OK obstacle front=" << boolText(blocked[0])
-                      << " left=" << boolText(blocked[1])
-                      << " right=" << boolText(blocked[2]) << '\n';
+                      << " left=" << boolText(blocked[1]) << '\n';
             printStatus(controller);
             continue;
         }

@@ -27,9 +27,9 @@ using namespace rvc;
 namespace
 {
 
-    void sendObstacleDetected(Controller &controller, bool front, bool left, bool right)
+    void sendObstacleDetected(Controller &controller, bool front, bool left)
     {
-        const bool direction[3] = {front, left, right};
+        const bool direction[2] = {front, left};
         controller.obstacleDetected(direction);
     }
 
@@ -54,7 +54,8 @@ namespace
 
     void enterBackwardEscapeState(Controller &controller)
     {
-        sendObstacleDetected(controller, true, true, true);
+        sendObstacleDetected(controller, true, true);  // 전진: 전방+좌측 막힘 → 우회전 (checkR=true)
+        sendObstacleDetected(controller, true, false); // checkR: 전방 막힘 → 후진 (forward=false)
     }
 
     class StubOperatingMode final : public OperatingMode
@@ -92,7 +93,7 @@ namespace
 
 // TC-01
 // 목적: SD-05에서 전진 중 전방이 비어 있으면 UC3 Move Forward가 유지되는지 확인
-// 상황: currentMode는 실제 NormalMode, MotorDriver는 FRONT 방향으로 전진 중, front=false, left=true, right=true
+// 상황: currentMode는 실제 NormalMode, MotorDriver는 FRONT 방향으로 전진 중, front=false, left=true
 // 실행: Obstacle Sensor Driver가 obstacleDetected(dir) 입력 전달
 // 기대값: MotorDriver direction은 FRONT이고 forward 상태 유지
 TEST(ControllerObstacleDetectedTest, NormalModeFrontClearKeepsMovingForward)
@@ -104,7 +105,7 @@ TEST(ControllerObstacleDetectedTest, NormalModeFrontClearKeepsMovingForward)
     ASSERT_TRUE(controller.isMotorForward());
     ASSERT_EQ(motorDirection(controller), Direction::FRONT);
 
-    sendObstacleDetected(controller, false, true, true);
+    sendObstacleDetected(controller, false, true);
 
     EXPECT_EQ(controller.currentModeKind(), ModeKind::Normal);
     EXPECT_TRUE(controller.isMotorMoving());
@@ -114,7 +115,7 @@ TEST(ControllerObstacleDetectedTest, NormalModeFrontClearKeepsMovingForward)
 
 // TC-02
 // 목적: SD-05 내부 alt [direction = LEFT]에서 UC12 Turn Left와 UC3 Move Forward가 수행되는지 확인
-// 상황: currentMode는 실제 NormalMode, MotorDriver는 FRONT 방향으로 전진 중, front=true, left=false, right=false
+// 상황: currentMode는 실제 NormalMode, MotorDriver는 FRONT 방향으로 전진 중, front=true, left=false
 // 실행: Obstacle Sensor Driver가 obstacleDetected(dir) 입력 전달
 // 기대값: MotorDriver direction은 LEFT이고 forward 상태 유지
 TEST(ControllerObstacleDetectedTest, NormalModeForwardFrontBlockedTurnsLeft)
@@ -126,7 +127,7 @@ TEST(ControllerObstacleDetectedTest, NormalModeForwardFrontBlockedTurnsLeft)
     ASSERT_TRUE(controller.isMotorForward());
     ASSERT_EQ(motorDirection(controller), Direction::FRONT);
 
-    sendObstacleDetected(controller, true, false, false);
+    sendObstacleDetected(controller, true, false);
 
     EXPECT_EQ(controller.currentModeKind(), ModeKind::Normal);
     EXPECT_TRUE(controller.isMotorMoving());
@@ -135,10 +136,11 @@ TEST(ControllerObstacleDetectedTest, NormalModeForwardFrontBlockedTurnsLeft)
 }
 
 // TC-03
-// 목적: SD-05 내부 alt [direction = RIGHT]에서 UC13 Turn Right와 UC3 Move Forward가 수행되는지 확인
-// 상황: currentMode는 실제 NormalMode, MotorDriver는 FRONT 방향으로 전진 중, front=true, left=true, right=false
-// 실행: Obstacle Sensor Driver가 obstacleDetected(dir) 입력 전달
-// 기대값: MotorDriver direction은 RIGHT이고 forward 상태 유지
+// 목적: SD-05 내부 alt [direction = RIGHT]에서 UC13 Turn Right(checkR=true) 후
+//       전방 확인 시 UC3 Move Forward가 수행되는지 확인
+// 상황: currentMode는 실제 NormalMode, MotorDriver는 FRONT 방향으로 전진 중
+// 실행: [front=true, left=true] → 우회전(checkR=true), [front=false] → 전방 확인 후 전진
+// 기대값: MotorDriver direction은 RIGHT이고 forward=true
 TEST(ControllerObstacleDetectedTest, NormalModeForwardFrontAndLeftBlockedTurnsRight)
 {
     Controller controller;
@@ -148,7 +150,10 @@ TEST(ControllerObstacleDetectedTest, NormalModeForwardFrontAndLeftBlockedTurnsRi
     ASSERT_TRUE(controller.isMotorForward());
     ASSERT_EQ(motorDirection(controller), Direction::FRONT);
 
-    sendObstacleDetected(controller, true, true, false);
+    sendObstacleDetected(controller, true, true); // 전방+좌측 막힘 → 우회전 (checkR=true)
+    ASSERT_EQ(motorDirection(controller), Direction::RIGHT);
+
+    sendObstacleDetected(controller, false, false); // checkR: 전방 비어있음 → moveForward
 
     EXPECT_EQ(controller.currentModeKind(), ModeKind::Normal);
     EXPECT_TRUE(controller.isMotorMoving());
@@ -158,8 +163,8 @@ TEST(ControllerObstacleDetectedTest, NormalModeForwardFrontAndLeftBlockedTurnsRi
 
 // TC-04
 // 목적: SD-05 내부 alt [direction = BACK]에서 UC14 Move Backward가 수행되는지 확인
-// 상황: currentMode는 실제 NormalMode, MotorDriver는 전진 중, front=true, left=true, right=true
-// 실행: Obstacle Sensor Driver가 obstacleDetected(dir) 입력 전달
+// 상황: currentMode는 실제 NormalMode, MotorDriver는 전진 중
+// 실행: [front=true, left=true] → 우회전(checkR=true), [front=true] → 전방 막힘 → 후진
 // 기대값: MotorDriver는 moving 상태이지만 forward는 false
 TEST(ControllerObstacleDetectedTest, NormalModeForwardAllBlockedMovesBackward)
 {
@@ -168,8 +173,12 @@ TEST(ControllerObstacleDetectedTest, NormalModeForwardAllBlockedMovesBackward)
 
     ASSERT_EQ(controller.currentModeKind(), ModeKind::Normal);
     ASSERT_TRUE(controller.isMotorForward());
+    ASSERT_EQ(motorDirection(controller), Direction::FRONT);
 
-    sendObstacleDetected(controller, true, true, true);
+    sendObstacleDetected(controller, true, true); // 전방+좌측 막힘 → 우회전 (checkR=true)
+    ASSERT_EQ(motorDirection(controller), Direction::RIGHT);
+
+    sendObstacleDetected(controller, true, false); // checkR: 전방 막힘 → 후진
 
     EXPECT_EQ(controller.currentModeKind(), ModeKind::Normal);
     EXPECT_TRUE(controller.isMotorMoving());
@@ -178,7 +187,7 @@ TEST(ControllerObstacleDetectedTest, NormalModeForwardAllBlockedMovesBackward)
 
 // TC-05
 // 목적: SD-05에서 후진 탈출 중 왼쪽이 비어 있으면 LEFT 경로로 다시 전진하는지 확인
-// 상황: currentMode는 실제 NormalMode, MotorDriver는 backward escape 상태, front=true, left=false, right=true
+// 상황: currentMode는 실제 NormalMode, MotorDriver는 backward escape 상태, front=true, left=false
 // 실행: Obstacle Sensor Driver가 obstacleDetected(dir) 입력 전달
 // 기대값: MotorDriver direction은 LEFT이고 forward는 true
 TEST(ControllerObstacleDetectedTest, NormalModeBackwardLeftClearTurnsLeftAndMovesForward)
@@ -191,7 +200,7 @@ TEST(ControllerObstacleDetectedTest, NormalModeBackwardLeftClearTurnsLeftAndMove
     ASSERT_TRUE(controller.isMotorMoving());
     ASSERT_FALSE(controller.isMotorForward());
 
-    sendObstacleDetected(controller, true, false, true);
+    sendObstacleDetected(controller, true, false);
 
     EXPECT_EQ(controller.currentModeKind(), ModeKind::Normal);
     EXPECT_TRUE(controller.isMotorMoving());
@@ -200,9 +209,9 @@ TEST(ControllerObstacleDetectedTest, NormalModeBackwardLeftClearTurnsLeftAndMove
 }
 
 // TC-06
-// 목적: SD-05에서 후진 탈출 중 오른쪽이 비어 있으면 RIGHT 경로로 다시 전진하는지 확인
-// 상황: currentMode는 실제 NormalMode, MotorDriver는 backward escape 상태, front=true, left=true, right=false
-// 실행: Obstacle Sensor Driver가 obstacleDetected(dir) 입력 전달
+// 목적: SD-05에서 후진 탈출 중 왼쪽이 막혀 있을 때 RIGHT 경로로 우회전 후 전방 확인 시 전진하는지 확인
+// 상황: currentMode는 실제 NormalMode, MotorDriver는 backward escape 상태
+// 실행: [left=true] → 우회전(checkR=true), [front=false] → 전방 확인 후 전진
 // 기대값: MotorDriver direction은 RIGHT이고 forward는 true
 TEST(ControllerObstacleDetectedTest, NormalModeBackwardRightClearTurnsRightAndMovesForward)
 {
@@ -214,7 +223,10 @@ TEST(ControllerObstacleDetectedTest, NormalModeBackwardRightClearTurnsRightAndMo
     ASSERT_TRUE(controller.isMotorMoving());
     ASSERT_FALSE(controller.isMotorForward());
 
-    sendObstacleDetected(controller, true, true, false);
+    sendObstacleDetected(controller, false, true); // 후진: 좌측 막힘 → 우회전 (checkR=true)
+    ASSERT_EQ(motorDirection(controller), Direction::RIGHT);
+
+    sendObstacleDetected(controller, false, false); // checkR: 전방 비어있음 → moveForward
 
     EXPECT_EQ(controller.currentModeKind(), ModeKind::Normal);
     EXPECT_TRUE(controller.isMotorMoving());
@@ -223,9 +235,9 @@ TEST(ControllerObstacleDetectedTest, NormalModeBackwardRightClearTurnsRightAndMo
 }
 
 // TC-07
-// 목적: SD-05에서 후진 탈출 중 좌우가 모두 막혀 있으면 BACK 경로를 유지하는지 확인
-// 상황: currentMode는 실제 NormalMode, MotorDriver는 backward escape 상태, front=false, left=true, right=true
-// 실행: Obstacle Sensor Driver가 obstacleDetected(dir) 입력 전달
+// 목적: SD-05에서 후진 탈출 중 좌측이 막혀 우회전 후 전방도 막혀 있으면 BACK 경로를 유지하는지 확인
+// 상황: currentMode는 실제 NormalMode, MotorDriver는 backward escape 상태
+// 실행: [left=true] → 우회전(checkR=true), [front=true] → 전방 막힘 → 후진 유지
 // 기대값: MotorDriver는 moving 상태이지만 forward는 false
 TEST(ControllerObstacleDetectedTest, NormalModeBackwardNoSideClearKeepsBackward)
 {
@@ -237,7 +249,10 @@ TEST(ControllerObstacleDetectedTest, NormalModeBackwardNoSideClearKeepsBackward)
     ASSERT_TRUE(controller.isMotorMoving());
     ASSERT_FALSE(controller.isMotorForward());
 
-    sendObstacleDetected(controller, false, true, true);
+    sendObstacleDetected(controller, false, true); // 후진: 좌측 막힘 → 우회전 (checkR=true)
+    ASSERT_EQ(motorDirection(controller), Direction::RIGHT);
+
+    sendObstacleDetected(controller, true, false); // checkR: 전방 막힘 → 후진 유지
 
     EXPECT_EQ(controller.currentModeKind(), ModeKind::Normal);
     EXPECT_TRUE(controller.isMotorMoving());
@@ -259,7 +274,7 @@ TEST(ControllerObstacleDetectedTest, BoostModeFrontClearKeepsMovingForward)
     ASSERT_TRUE(controller.isMotorForward());
     ASSERT_EQ(motorDirection(controller), Direction::FRONT);
 
-    sendObstacleDetected(controller, false, true, true);
+    sendObstacleDetected(controller, false, true);
 
     EXPECT_EQ(controller.currentModeKind(), ModeKind::Boost);
     EXPECT_EQ(controller.cleanerMode(), "boost");
@@ -270,7 +285,7 @@ TEST(ControllerObstacleDetectedTest, BoostModeFrontClearKeepsMovingForward)
 
 // TC-09
 // 목적: SD-05 내부 alt [direction = LEFT]가 실제 BoostMode에서 수행되는지 확인
-// 상황: currentMode는 실제 BoostMode, CleanerDriver는 boost 청소 중, front=true, left=false, right=false
+// 상황: currentMode는 실제 BoostMode, CleanerDriver는 boost 청소 중, front=true, left=false
 // 실행: Obstacle Sensor Driver가 obstacleDetected(dir) 입력 전달
 // 기대값: currentMode와 CleanerDriver mode는 boost로 유지되고 MotorDriver direction은 LEFT
 TEST(ControllerObstacleDetectedTest, BoostModeForwardFrontBlockedTurnsLeft)
@@ -282,7 +297,7 @@ TEST(ControllerObstacleDetectedTest, BoostModeForwardFrontBlockedTurnsLeft)
     ASSERT_EQ(controller.cleanerMode(), "boost");
     ASSERT_TRUE(controller.isMotorForward());
 
-    sendObstacleDetected(controller, true, false, false);
+    sendObstacleDetected(controller, true, false);
 
     EXPECT_EQ(controller.currentModeKind(), ModeKind::Boost);
     EXPECT_EQ(controller.cleanerMode(), "boost");
@@ -293,9 +308,9 @@ TEST(ControllerObstacleDetectedTest, BoostModeForwardFrontBlockedTurnsLeft)
 
 // TC-10
 // 목적: SD-05 내부 alt [direction = RIGHT]가 실제 BoostMode에서 수행되는지 확인
-// 상황: currentMode는 실제 BoostMode, CleanerDriver는 boost 청소 중, front=true, left=true, right=false
-// 실행: Obstacle Sensor Driver가 obstacleDetected(dir) 입력 전달
-// 기대값: currentMode와 CleanerDriver mode는 boost로 유지되고 MotorDriver direction은 RIGHT
+// 상황: currentMode는 실제 BoostMode, CleanerDriver는 boost 청소 중
+// 실행: [front=true, left=true] → 우회전(checkR=true), [front=false] → 전방 확인 후 전진
+// 기대값: currentMode와 CleanerDriver mode는 boost로 유지되고 MotorDriver direction은 RIGHT, forward=true
 TEST(ControllerObstacleDetectedTest, BoostModeForwardFrontAndLeftBlockedTurnsRight)
 {
     Controller controller;
@@ -304,8 +319,12 @@ TEST(ControllerObstacleDetectedTest, BoostModeForwardFrontAndLeftBlockedTurnsRig
     ASSERT_EQ(controller.currentModeKind(), ModeKind::Boost);
     ASSERT_EQ(controller.cleanerMode(), "boost");
     ASSERT_TRUE(controller.isMotorForward());
+    ASSERT_EQ(motorDirection(controller), Direction::FRONT);
 
-    sendObstacleDetected(controller, true, true, false);
+    sendObstacleDetected(controller, true, true); // 전방+좌측 막힘 → 우회전 (checkR=true)
+    ASSERT_EQ(motorDirection(controller), Direction::RIGHT);
+
+    sendObstacleDetected(controller, false, false); // checkR: 전방 비어있음 → moveForward
 
     EXPECT_EQ(controller.currentModeKind(), ModeKind::Boost);
     EXPECT_EQ(controller.cleanerMode(), "boost");
@@ -316,8 +335,8 @@ TEST(ControllerObstacleDetectedTest, BoostModeForwardFrontAndLeftBlockedTurnsRig
 
 // TC-11
 // 목적: SD-05 내부 alt [direction = BACK]가 실제 BoostMode에서 수행되는지 확인
-// 상황: currentMode는 실제 BoostMode, CleanerDriver는 boost 청소 중, front=true, left=true, right=true
-// 실행: Obstacle Sensor Driver가 obstacleDetected(dir) 입력 전달
+// 상황: currentMode는 실제 BoostMode, CleanerDriver는 boost 청소 중
+// 실행: [front=true, left=true] → 우회전(checkR=true), [front=true] → 전방 막힘 → 후진
 // 기대값: currentMode와 CleanerDriver mode는 boost로 유지되고 MotorDriver forward는 false
 TEST(ControllerObstacleDetectedTest, BoostModeForwardAllBlockedMovesBackward)
 {
@@ -327,8 +346,12 @@ TEST(ControllerObstacleDetectedTest, BoostModeForwardAllBlockedMovesBackward)
     ASSERT_EQ(controller.currentModeKind(), ModeKind::Boost);
     ASSERT_EQ(controller.cleanerMode(), "boost");
     ASSERT_TRUE(controller.isMotorForward());
+    ASSERT_EQ(motorDirection(controller), Direction::FRONT);
 
-    sendObstacleDetected(controller, true, true, true);
+    sendObstacleDetected(controller, true, true); // 전방+좌측 막힘 → 우회전 (checkR=true)
+    ASSERT_EQ(motorDirection(controller), Direction::RIGHT);
+
+    sendObstacleDetected(controller, true, false); // checkR: 전방 막힘 → 후진
 
     EXPECT_EQ(controller.currentModeKind(), ModeKind::Boost);
     EXPECT_EQ(controller.cleanerMode(), "boost");
@@ -338,7 +361,7 @@ TEST(ControllerObstacleDetectedTest, BoostModeForwardAllBlockedMovesBackward)
 
 // TC-12
 // 목적: SD-05에서 BoostMode 후진 탈출 중 왼쪽이 비어 있으면 LEFT 경로로 다시 전진하는지 확인
-// 상황: currentMode는 실제 BoostMode, MotorDriver는 backward escape 상태, front=true, left=false, right=true
+// 상황: currentMode는 실제 BoostMode, MotorDriver는 backward escape 상태, front=true, left=false
 // 실행: Obstacle Sensor Driver가 obstacleDetected(dir) 입력 전달
 // 기대값: currentMode와 CleanerDriver mode는 boost로 유지되고 MotorDriver direction은 LEFT
 TEST(ControllerObstacleDetectedTest, BoostModeBackwardLeftClearTurnsLeftAndMovesForward)
@@ -352,7 +375,7 @@ TEST(ControllerObstacleDetectedTest, BoostModeBackwardLeftClearTurnsLeftAndMoves
     ASSERT_TRUE(controller.isMotorMoving());
     ASSERT_FALSE(controller.isMotorForward());
 
-    sendObstacleDetected(controller, true, false, true);
+    sendObstacleDetected(controller, true, false);
 
     EXPECT_EQ(controller.currentModeKind(), ModeKind::Boost);
     EXPECT_EQ(controller.cleanerMode(), "boost");
@@ -362,10 +385,10 @@ TEST(ControllerObstacleDetectedTest, BoostModeBackwardLeftClearTurnsLeftAndMoves
 }
 
 // TC-13
-// 목적: SD-05에서 BoostMode 후진 탈출 중 오른쪽이 비어 있으면 RIGHT 경로로 다시 전진하는지 확인
-// 상황: currentMode는 실제 BoostMode, MotorDriver는 backward escape 상태, front=true, left=true, right=false
-// 실행: Obstacle Sensor Driver가 obstacleDetected(dir) 입력 전달
-// 기대값: currentMode와 CleanerDriver mode는 boost로 유지되고 MotorDriver direction은 RIGHT
+// 목적: SD-05에서 BoostMode 후진 탈출 중 좌측이 막혀 우회전 후 전방 확인 시 전진하는지 확인
+// 상황: currentMode는 실제 BoostMode, MotorDriver는 backward escape 상태
+// 실행: [left=true] → 우회전(checkR=true), [front=false] → 전방 확인 후 전진
+// 기대값: currentMode와 CleanerDriver mode는 boost로 유지되고 MotorDriver direction은 RIGHT, forward=true
 TEST(ControllerObstacleDetectedTest, BoostModeBackwardRightClearTurnsRightAndMovesForward)
 {
     Controller controller;
@@ -377,7 +400,10 @@ TEST(ControllerObstacleDetectedTest, BoostModeBackwardRightClearTurnsRightAndMov
     ASSERT_TRUE(controller.isMotorMoving());
     ASSERT_FALSE(controller.isMotorForward());
 
-    sendObstacleDetected(controller, true, true, false);
+    sendObstacleDetected(controller, false, true); // 후진: 좌측 막힘 → 우회전 (checkR=true)
+    ASSERT_EQ(motorDirection(controller), Direction::RIGHT);
+
+    sendObstacleDetected(controller, false, false); // checkR: 전방 비어있음 → moveForward
 
     EXPECT_EQ(controller.currentModeKind(), ModeKind::Boost);
     EXPECT_EQ(controller.cleanerMode(), "boost");
@@ -387,9 +413,9 @@ TEST(ControllerObstacleDetectedTest, BoostModeBackwardRightClearTurnsRightAndMov
 }
 
 // TC-14
-// 목적: SD-05에서 BoostMode 후진 탈출 중 좌우가 모두 막혀 있으면 BACK 경로를 유지하는지 확인
-// 상황: currentMode는 실제 BoostMode, MotorDriver는 backward escape 상태, front=false, left=true, right=true
-// 실행: Obstacle Sensor Driver가 obstacleDetected(dir) 입력 전달
+// 목적: SD-05에서 BoostMode 후진 탈출 중 좌측이 막혀 우회전 후 전방도 막혀 있으면 BACK 경로를 유지하는지 확인
+// 상황: currentMode는 실제 BoostMode, MotorDriver는 backward escape 상태
+// 실행: [left=true] → 우회전(checkR=true), [front=true] → 전방 막힘 → 후진 유지
 // 기대값: currentMode와 CleanerDriver mode는 boost로 유지되고 MotorDriver forward는 false
 TEST(ControllerObstacleDetectedTest, BoostModeBackwardNoSideClearKeepsBackward)
 {
@@ -402,7 +428,10 @@ TEST(ControllerObstacleDetectedTest, BoostModeBackwardNoSideClearKeepsBackward)
     ASSERT_TRUE(controller.isMotorMoving());
     ASSERT_FALSE(controller.isMotorForward());
 
-    sendObstacleDetected(controller, false, true, true);
+    sendObstacleDetected(controller, false, true); // 후진: 좌측 막힘 → 우회전 (checkR=true)
+    ASSERT_EQ(motorDirection(controller), Direction::RIGHT);
+
+    sendObstacleDetected(controller, true, false); // checkR: 전방 막힘 → 후진 유지
 
     EXPECT_EQ(controller.currentModeKind(), ModeKind::Boost);
     EXPECT_EQ(controller.cleanerMode(), "boost");
@@ -412,7 +441,7 @@ TEST(ControllerObstacleDetectedTest, BoostModeBackwardNoSideClearKeepsBackward)
 
 // TC-15
 // 목적: currentMode가 없으면 Controller::obstacleDetected()가 위임하지 않고 종료되는지 확인
-// 상황: Controller는 전원 off, currentMode는 nullptr, front=true, left=true, right=true
+// 상황: Controller는 전원 off, currentMode는 nullptr, front=true, left=true
 // 실행: Obstacle Sensor Driver가 obstacleDetected(dir) 입력 전달
 // 기대값: currentMode는 없고 MotorDriver는 정지 상태 유지
 TEST(ControllerObstacleDetectedTest, PowerOffObstacleDetectedDoesNothing)
@@ -422,7 +451,7 @@ TEST(ControllerObstacleDetectedTest, PowerOffObstacleDetectedDoesNothing)
     ASSERT_FALSE(controller.isPowerOn());
     ASSERT_FALSE(controller.hasCurrentMode());
 
-    sendObstacleDetected(controller, true, true, true);
+    sendObstacleDetected(controller, true, true);
 
     EXPECT_FALSE(controller.isPowerOn());
     EXPECT_FALSE(controller.hasCurrentMode());
@@ -455,7 +484,7 @@ TEST(ControllerObstacleDetectedTest, NullDirectionDoesNothingInNormalMode)
 
 // TC-17
 // 목적: SD-05 opt [currentMode == Normal or Boost] 밖인 StandbyMode에서는 이동이 발생하지 않는지 확인
-// 상황: currentMode는 실제 StandbyMode, MotorDriver는 정지 상태, front=true, left=false, right=false
+// 상황: currentMode는 실제 StandbyMode, MotorDriver는 정지 상태, front=true, left=false
 // 실행: Obstacle Sensor Driver가 obstacleDetected(dir) 입력 전달
 // 기대값: currentMode는 StandbyMode이고 MotorDriver는 정지 상태 유지
 TEST(ControllerObstacleDetectedTest, StandbyModeObstacleDetectedDoesNotMoveMotor)
@@ -466,7 +495,7 @@ TEST(ControllerObstacleDetectedTest, StandbyModeObstacleDetectedDoesNotMoveMotor
     ASSERT_EQ(controller.currentModeKind(), ModeKind::Standby);
     ASSERT_FALSE(controller.isMotorMoving());
 
-    sendObstacleDetected(controller, true, false, false);
+    sendObstacleDetected(controller, true, false);
 
     EXPECT_EQ(controller.currentModeKind(), ModeKind::Standby);
     EXPECT_FALSE(controller.isMotorMoving());
@@ -476,7 +505,7 @@ TEST(ControllerObstacleDetectedTest, StandbyModeObstacleDetectedDoesNotMoveMotor
 
 // TC-18
 // 목적: SD-05 opt [currentMode == Normal or Boost] 밖인 LowBatteryMode에서는 이동이 발생하지 않는지 확인
-// 상황: currentMode는 실제 LowBatteryMode, MotorDriver는 정지 상태, front=true, left=false, right=false
+// 상황: currentMode는 실제 LowBatteryMode, MotorDriver는 정지 상태, front=true, left=false
 // 실행: Obstacle Sensor Driver가 obstacleDetected(dir) 입력 전달
 // 기대값: currentMode는 LowBatteryMode이고 MotorDriver는 정지 상태 유지
 TEST(ControllerObstacleDetectedTest, LowBatteryModeObstacleDetectedDoesNotMoveMotor)
@@ -488,7 +517,7 @@ TEST(ControllerObstacleDetectedTest, LowBatteryModeObstacleDetectedDoesNotMoveMo
     ASSERT_EQ(controller.currentModeKind(), ModeKind::LowBattery);
     ASSERT_FALSE(controller.isMotorMoving());
 
-    sendObstacleDetected(controller, true, false, false);
+    sendObstacleDetected(controller, true, false);
 
     EXPECT_EQ(controller.currentModeKind(), ModeKind::LowBattery);
     EXPECT_FALSE(controller.isMotorMoving());
@@ -498,7 +527,7 @@ TEST(ControllerObstacleDetectedTest, LowBatteryModeObstacleDetectedDoesNotMoveMo
 
 // TC-19
 // 목적: Controller::obstacleDetected()가 ObstacleProcessor를 통해 currentMode.checkIsMoving()에 LEFT를 전달하는지 확인
-// 상황: currentMode는 StubOperatingMode, MotorDriver는 전진 중, front=true, left=false, right=true
+// 상황: currentMode는 StubOperatingMode, MotorDriver는 전진 중, front=true, left=false
 // 실행: Obstacle Sensor Driver가 obstacleDetected(dir) 입력 전달
 // 기대값: Stub의 checkIsMoving 호출 횟수는 1이고 전달 direction은 LEFT
 TEST(ControllerObstacleDetectedTest, StubModeReceivesLeftDirectionWhenForwardAndFrontBlocked)
@@ -508,7 +537,7 @@ TEST(ControllerObstacleDetectedTest, StubModeReceivesLeftDirectionWhenForwardAnd
     attachStubMode(controller, stubMode);
     controller.motorDriver->moveForward();
 
-    sendObstacleDetected(controller, true, false, true);
+    sendObstacleDetected(controller, true, false);
 
     EXPECT_EQ(stubMode.checkIsMovingCallCount, 1);
     EXPECT_EQ(stubMode.lastDirection, Direction::LEFT);
@@ -517,7 +546,7 @@ TEST(ControllerObstacleDetectedTest, StubModeReceivesLeftDirectionWhenForwardAnd
 
 // TC-20
 // 목적: Controller::obstacleDetected()가 후진 탈출 상태에서 RIGHT 전달 인자를 계산하는지 확인
-// 상황: currentMode는 StubOperatingMode, MotorDriver는 backward escape 상태, front=false, left=true, right=false
+// 상황: currentMode는 StubOperatingMode, MotorDriver는 backward escape 상태, front=false, left=true
 // 실행: Obstacle Sensor Driver가 obstacleDetected(dir) 입력 전달
 // 기대값: Stub의 checkIsMoving 호출 횟수는 1이고 전달 direction은 RIGHT
 TEST(ControllerObstacleDetectedTest, StubModeReceivesRightDirectionWhenBackwardAndRightClear)
@@ -528,7 +557,7 @@ TEST(ControllerObstacleDetectedTest, StubModeReceivesRightDirectionWhenBackwardA
     controller.motorDriver->moveForward();
     controller.motorDriver->moveBackward();
 
-    sendObstacleDetected(controller, false, true, false);
+    sendObstacleDetected(controller, false, true);
 
     EXPECT_EQ(stubMode.checkIsMovingCallCount, 1);
     EXPECT_EQ(stubMode.lastDirection, Direction::RIGHT);

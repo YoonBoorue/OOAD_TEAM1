@@ -12,9 +12,11 @@ namespace rvc
     {
     private:
         std::array<bool, 3> direction_;
+        bool checkR;
 
     public:
-        void decideDirection(const std::array<bool, 3> &dir, const OperatingMode &currentMode, MotorDriver &motor);
+        ObstacleProcessor();
+        void decideDirection(const std::array<bool, 2> &dir, const OperatingMode &currentMode, MotorDriver &motor);
     };
 
 } // namespace rvc

@@ -1,13 +1,18 @@
 # TC26 : ObstacleDetected3
-# Precondition : NormalMode, forward=false
-# Action : left obstacle detected, front/right clear
-# Expected : turnRight, moveDirection changed to RIGHT, then forward=true
+# Precondition : NormalMode, motorDirection=FRONT, forward=false
+# Action : backward mode, left blocked → turnRight (checkR=true), front clear → moveForward
+# Expected : motorDirection=RIGHT, forward=true
 power
 start
 expect mode NormalMode
-obstacle 1 1 1
+expect motorDirection FRONT
+obstacle 1 1
+obstacle 1 0
 expect motorForward false
-obstacle 0 1 0
+expect motorDirection FRONT
+obstacle 0 1
+expect motorDirection RIGHT
+obstacle 0 0
 expect mode NormalMode
 expect cleaner on
 expect motor moving

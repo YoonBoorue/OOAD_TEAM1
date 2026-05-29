@@ -47,10 +47,11 @@ namespace rvc
 
             case Direction::RIGHT:
                 motorDriver.turnRight();
-                motorDriver.moveForward();
+                // motorDriver.moveForward();
                 break;
 
             case Direction::BACK:
+                motorDriver.turnLeft(); // 추가
                 motorDriver.moveBackward();
                 break;
             }
