@@ -30,7 +30,7 @@ package "rvc::control" {
     + lowBatteryDetected(): void
     + lowBatteryCleared(): void
     + dustDetected(): void
-    + obstacleDetected(direction: bool[3]): void
+    + obstacleDetected(direction: bool[2]): void
     + timerExpiredNow(): void
   }
 }
@@ -124,7 +124,7 @@ package "rvc::driver" {
   }
 
   class ObstacleSensorDriver {
-    - direction: bool[3]
+    - direction: bool[2]
     - active: bool
     + initialize(): void
     + deactivateObstacleSensor(): void
@@ -138,8 +138,8 @@ package "rvc::processor" {
   }
 
   class ObstacleProcessor {
-    - direction_: array<bool, 3>
-    + decideDirection(dir: array<bool, 3>, currentMode: OperatingMode, motor: MotorDriver): void
+    - direction_: array<bool, 2>
+    + decideDirection(dir: array<bool, 2>, currentMode: OperatingMode, motor: MotorDriver): void
   }
 }
 
@@ -197,6 +197,24 @@ end note
 note bottom of OperatingMode
 State Pattern basis.
 Concrete modes are stateless function-local singletons in Modes.cpp.
+end note
+
+note bottom of ObstacleSensorDriver
+direction[0] = front, direction[1] = left.
+No right sensor input is provided.
+Right availability is checked after turnRight()
+by reusing the front sensor.
+end note
+
+note bottom of ObstacleProcessor
+RIGHT remains an avoidance direction.
+It is selected through turnRight() plus
+front sensor recheck, not right sensor input.
+All-blocked equivalent flow:
+turn right, turn left to restore front,
+move backward while checking right,
+then move to an available direction
+with left priority.
 end note
 
 @enduml
