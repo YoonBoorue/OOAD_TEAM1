@@ -13,11 +13,15 @@ participant ":ObstacleProcessor" as Processor
 participant "currentMode:\nOperatingMode" as Mode
 participant ":MotorDriver" as Motor
 
-ObstacleSensor -> C: obstacleDetected(direction[3])
+ObstacleSensor -> C: obstacleDetected(direction[2])
 activate C
 alt currentMode == nullptr or direction == nullptr
   C --> ObstacleSensor: ignored
 else valid input
+  note over ObstacleSensor, C
+  direction[0] = front, direction[1] = left.
+  Right sensor input is removed.
+  end note
   C -> Processor: decideDirection(dir, currentMode, Motor)
   activate Processor
   Processor -> Motor: checkIsForward()
@@ -31,9 +35,40 @@ else valid input
     Mode -> Motor: moveForward()
   else selectedDirection = RIGHT
     Mode -> Motor: turnRight()
-    Mode -> Motor: moveForward()
+    Mode -> ObstacleSensor: recheckFront()
+    ObstacleSensor --> Mode: front clear?
+    alt front clear after right turn
+      Mode -> Motor: moveForward()
+    else front blocked after right turn
+      Mode -> Motor: turnLeft()
+      Mode -> Motor: moveBackward()
+      Mode -> ObstacleSensor: recheckFrontWhileBackward()
+      ObstacleSensor --> Mode: right-side clear?
+      alt left direction available
+        Mode -> Motor: turnLeft()
+        Mode -> Motor: moveForward()
+      else right-side clear
+        Mode -> Motor: turnRight()
+        Mode -> Motor: moveForward()
+      else no side clear
+        Mode -> Motor: moveBackward()
+      end
+    end
   else selectedDirection = BACK
+    Mode -> Motor: turnRight()
+    Mode -> Motor: turnLeft()
     Mode -> Motor: moveBackward()
+    Mode -> ObstacleSensor: recheckFrontWhileBackward()
+    ObstacleSensor --> Mode: available direction?
+    alt left direction available
+      Mode -> Motor: turnLeft()
+      Mode -> Motor: moveForward()
+    else right-side clear
+      Mode -> Motor: turnRight()
+      Mode -> Motor: moveForward()
+    else no side clear
+      Mode -> Motor: moveBackward()
+    end
   end
   Mode --> Processor: movement command complete
   deactivate Mode
@@ -46,6 +81,11 @@ deactivate C
 note over Mode, Motor
 Current implementation keeps cleaner state during obstacle avoidance.
 The artifact-level cleaner stop requirement is documented as a risk.
+Right avoidance direction is preserved, but right sensor input is removed.
+Right availability is determined by turnRight() followed by front sensor recheck.
+When all checked paths are blocked, the flow turns right, turns left to restore
+front, moves backward while checking right, and then moves to an available
+direction with left priority.
 end note
 
 @enduml

@@ -15,7 +15,13 @@ participant ":RVCSystem" as RVCSystem
 
 DustSensorDriver -> RVCSystem: dustDetected()
 
-ObstacleSensorDriver -> RVCSystem: obstacleDetected(direction)
+ObstacleSensorDriver -> RVCSystem: obstacleDetected(frontLeftDirection)
+
+note right of ObstacleSensorDriver
+right sensor input removed.
+Right availability is checked by
+turnRight() and front sensor recheck.
+end note
 
 BatteryDriver -> RVCSystem: lowBatteryDetected()
 

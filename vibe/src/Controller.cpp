@@ -63,6 +63,26 @@ bool canStartCharging(const Controller& controller)
 {
     return controller.currentMode == nullptr || controller.currentMode->canCharge();
 }
+
+// [추가] processor의 후진 후 재확인 결과를 motor command로 변환
+void moveAfterBackwardRecheck(Direction direction, MotorDriver& motorDriver)
+{
+    if (direction == Direction::Left)
+    {
+        motorDriver.turnLeft();
+        motorDriver.moveForward();
+        return;
+    }
+
+    if (direction == Direction::Right)
+    {
+        motorDriver.turnRight();
+        motorDriver.moveForward();
+        return;
+    }
+
+    motorDriver.moveBackward();
+}
 } // namespace
 
 void Controller::powerButtonPressed()
@@ -184,7 +204,8 @@ void Controller::dustDetected()
     commitModeTransition(*this, previousMode, nextMode);
 }
 
-void Controller::obstacleDetected(const bool direction[3])
+// [변경] 외부 obstacle 입력을 front/left 두 칸으로 축소
+void Controller::obstacleDetected(const bool direction[2])
 {
     stateFor(*this);
 
@@ -198,11 +219,27 @@ void Controller::obstacleDetected(const bool direction[3])
 
     obstacleSensorDriver.front = direction[0];
     obstacleSensorDriver.left = direction[1];
-    obstacleSensorDriver.right = direction[2];
 
     const Direction selectedDirection = obstacleProcessor.decideDirection(obstacleSensorDriver);
     cleanerDriver.stopCleaning();
-    currentMode->checkIsMoving(selectedDirection, motorDriver);
+    if (selectedDirection == Direction::Right)
+    {
+        motorDriver.turnRight();
+        if (obstacleProcessor.isFrontClearAfterRightTurn())
+        {
+            motorDriver.moveForward();
+        }
+        else
+        {
+            motorDriver.turnLeft();
+            motorDriver.moveBackward();
+            moveAfterBackwardRecheck(obstacleProcessor.decideDirectionAfterBackwardRecheck(), motorDriver);
+        }
+    }
+    else
+    {
+        currentMode->checkIsMoving(selectedDirection, motorDriver);
+    }
 
     if (shouldResumeCleaning)
     {
@@ -217,12 +254,12 @@ void Controller::obstacleDetected(const bool direction[3])
     }
 }
 
+// [변경] 저장된 obstacle sensor state에서 right sensor 입력 제외
 void Controller::obstacleDetected()
 {
-    const bool direction[3] = {
+    const bool direction[2] = {
         obstacleSensorDriver.front,
         obstacleSensorDriver.left,
-        obstacleSensorDriver.right,
     };
 
     obstacleDetected(direction);
@@ -455,16 +492,17 @@ void ObstacleSensorDriver::deactivateObstacleSensor()
     clear();
 }
 
+// [변경] right sensor state 제거, front/left만 초기화
 void ObstacleSensorDriver::clear()
 {
     front = false;
     left = false;
-    right = false;
 }
 
+// [변경] right sensor 입력 제거로 front/left만 obstacle 여부에 사용
 bool ObstacleSensorDriver::hasObstacle() const
 {
-    return front || left || right;
+    return front || left;
 }
 
 void DustSensorDriver::initialize()

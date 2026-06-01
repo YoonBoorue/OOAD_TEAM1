@@ -13,7 +13,14 @@ class ObstacleProcessor
 public:
     ObstacleProcessor() = default;
 
-    Direction decideDirection(const ObstacleSensorDriver& obstacleSensorDriver) const;
+    Direction decideDirection(const ObstacleSensorDriver& obstacleSensorDriver);
+    bool isFrontClearAfterRightTurn() const;
+    Direction decideDirectionAfterBackwardRecheck() const;
+
+private:
+    bool frontBlocked = false;
+    bool leftBlocked = false;
+    bool frontBlockedAfterRightTurn = false;
 };
 
 } // namespace rvc
