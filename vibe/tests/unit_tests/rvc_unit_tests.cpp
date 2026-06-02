@@ -83,10 +83,26 @@ Controller& NewLowBatteryController()
     return controller;
 }
 
-void SendObstacle(Controller& controller, bool front, bool left, bool right)
+// [변경] right sensor input 제거로 incoming obstacle 배열은 front/left 두 값만 전달한다.
+void SendObstacle(Controller& controller, bool front, bool left)
 {
-    const bool direction[3] = {front, left, right};
+    const bool direction[2] = {front, left};
     controller.obstacleDetected(direction);
+}
+
+// [추가] 우회전/후진 이후 front sensor 재확인 결과를 저장한 뒤 obstacle flow를 실행한다.
+void SendObstacleWithRecheck(Controller& controller,
+                             bool front,
+                             bool left,
+                             bool frontAfterRightTurn,
+                             bool leftAfterBackward,
+                             bool frontAfterBackwardRightCheck)
+{
+    controller.obstacleSensorDriver.setObstacleInput(front, left);
+    controller.obstacleSensorDriver.setFrontAfterRightTurn(frontAfterRightTurn);
+    controller.obstacleSensorDriver.setBackwardRecheck(leftAfterBackward,
+                                                       frontAfterBackwardRightCheck);
+    controller.obstacleDetected();
 }
 
 std::unique_ptr<OperatingMode> OwnIfNew(OperatingMode* nextMode, OperatingMode* self)
@@ -626,7 +642,7 @@ TEST_F(ControllerLowBatteryDetectedTest, LowBatteryDuringChargingKeepsChargingSt
 TEST_F(ControllerLowBatteryDetectedTest, LowBatteryStopsMovementButKeepsLastDirection)
 {
     Controller& controller = normalController();
-    SendObstacle(controller, true, true, true);
+    SendObstacleWithRecheck(controller, true, true, true, true, true);
 
     ASSERT_EQ(controller.motorDriver.direction, Direction::Backward);
 
@@ -885,7 +901,7 @@ TEST_F(ControllerObstacleDetectedTest, OffStateIgnoresObstacleArray)
 {
     Controller& controller = offController();
 
-    SendObstacle(controller, true, false, false);
+    SendObstacle(controller, true, false);
 
     EXPECT_TRUE(IsOff(controller));
     EXPECT_FALSE(controller.obstacleSensorDriver.hasObstacle());
@@ -909,7 +925,7 @@ TEST_F(ControllerObstacleDetectedTest, NormalFrontClearKeepsForwardCleaning)
 {
     Controller& controller = normalController();
 
-    SendObstacle(controller, false, true, true);
+    SendObstacle(controller, false, true);
 
     EXPECT_TRUE(IsMode<NormalMode>(controller));
     EXPECT_TRUE(controller.motorDriver.isRunning);
@@ -917,14 +933,14 @@ TEST_F(ControllerObstacleDetectedTest, NormalFrontClearKeepsForwardCleaning)
     EXPECT_TRUE(controller.cleanerDriver.isRunning);
     EXPECT_FALSE(controller.cleanerDriver.isBoosting);
     EXPECT_TRUE(controller.obstacleSensorDriver.left);
-    EXPECT_TRUE(controller.obstacleSensorDriver.right);
+    // [삭제] right sensor state expectation removed; right is checked through front recheck state.
 }
 
 TEST_F(ControllerObstacleDetectedTest, NormalFrontBlockedLeftClearResumesForwardAfterTurn)
 {
     Controller& controller = normalController();
 
-    SendObstacle(controller, true, false, false);
+    SendObstacle(controller, true, false);
 
     EXPECT_TRUE(IsMode<NormalMode>(controller));
     EXPECT_TRUE(controller.motorDriver.isRunning);
@@ -937,7 +953,7 @@ TEST_F(ControllerObstacleDetectedTest, NormalFrontAndLeftBlockedRightClearResume
 {
     Controller& controller = normalController();
 
-    SendObstacle(controller, true, true, false);
+    SendObstacleWithRecheck(controller, true, true, false, true, true);
 
     EXPECT_TRUE(IsMode<NormalMode>(controller));
     EXPECT_TRUE(controller.motorDriver.isRunning);
@@ -951,7 +967,7 @@ TEST_F(ControllerObstacleDetectedTest, NormalAllBlockedMovesBackwardAndResumesCl
 {
     Controller& controller = normalController();
 
-    SendObstacle(controller, true, true, true);
+    SendObstacleWithRecheck(controller, true, true, true, true, true);
 
     EXPECT_TRUE(IsMode<NormalMode>(controller));
     EXPECT_TRUE(controller.motorDriver.isRunning);
@@ -963,9 +979,10 @@ TEST_F(ControllerObstacleDetectedTest, NormalAllBlockedMovesBackwardAndResumesCl
 TEST_F(ControllerObstacleDetectedTest, NoArgumentObstacleUsesStoredSensorState)
 {
     Controller& controller = normalController();
-    controller.obstacleSensorDriver.front = true;
-    controller.obstacleSensorDriver.left = true;
-    controller.obstacleSensorDriver.right = true;
+    // [변경] no-argument path uses stored front/left plus recheck state, not right sensor state.
+    controller.obstacleSensorDriver.setObstacleInput(true, true);
+    controller.obstacleSensorDriver.setFrontAfterRightTurn(true);
+    controller.obstacleSensorDriver.setBackwardRecheck(true, true);
 
     controller.obstacleDetected();
 
@@ -979,7 +996,7 @@ TEST_F(ControllerObstacleDetectedTest, BoostFrontClearKeepsBoostCleaning)
 {
     Controller& controller = boostController();
 
-    SendObstacle(controller, false, false, false);
+    SendObstacle(controller, false, false);
 
     EXPECT_TRUE(IsMode<BoostMode>(controller));
     EXPECT_TRUE(controller.motorDriver.isRunning);
@@ -992,7 +1009,7 @@ TEST_F(ControllerObstacleDetectedTest, BoostAllBlockedMovesBackwardAndRestoresBo
 {
     Controller& controller = boostController();
 
-    SendObstacle(controller, true, true, true);
+    SendObstacleWithRecheck(controller, true, true, true, true, true);
 
     EXPECT_TRUE(IsMode<BoostMode>(controller));
     EXPECT_TRUE(controller.motorDriver.isRunning);
@@ -1006,7 +1023,7 @@ TEST_F(ControllerObstacleDetectedTest, StandbyObstacleStopsMovementAndDoesNotSta
     Controller& controller = poweredOnController();
     controller.motorDriver.start(Direction::Forward);
 
-    SendObstacle(controller, true, false, false);
+    SendObstacle(controller, true, false);
 
     EXPECT_TRUE(IsMode<StandbyMode>(controller));
     EXPECT_FALSE(controller.motorDriver.isRunning);
@@ -1020,7 +1037,7 @@ TEST_F(ControllerObstacleDetectedTest, LowBatteryObstacleKeepsSafeStoppedState)
     controller.motorDriver.start(Direction::Forward);
     controller.cleanerDriver.startCleaning();
 
-    SendObstacle(controller, true, true, true);
+    SendObstacleWithRecheck(controller, true, true, true, true, true);
 
     EXPECT_TRUE(IsMode<LowBatteryMode>(controller));
     EXPECT_FALSE(controller.motorDriver.isRunning);
@@ -1033,7 +1050,7 @@ TEST_F(ControllerObstacleDetectedTest, ObstacleDuringNormalStopsThenRestartsNorm
     Controller& controller = normalController();
     controller.cleanerDriver.decideSetting(true);
 
-    SendObstacle(controller, true, true, true);
+    SendObstacleWithRecheck(controller, true, true, true, true, true);
 
     EXPECT_TRUE(IsMode<NormalMode>(controller));
     EXPECT_TRUE(controller.motorDriver.isRunning);
@@ -1090,9 +1107,8 @@ TEST_F(ControllerClockTickTest, LowBatteryHasPriorityOverDustAndObstacle)
     Controller& controller = normalController();
     controller.batteryDriver.isLowBattery = true;
     controller.dustSensorDriver.dustDetected = true;
-    controller.obstacleSensorDriver.front = true;
-    controller.obstacleSensorDriver.left = true;
-    controller.obstacleSensorDriver.right = true;
+    // [변경] right sensor state 없이 front/left obstacle state만 low-battery priority와 함께 둔다.
+    controller.obstacleSensorDriver.setObstacleInput(true, true);
 
     controller.clockTick();
 
@@ -1117,9 +1133,10 @@ TEST_F(ControllerClockTickTest, NormalDustFlagEntersBoost)
 TEST_F(ControllerClockTickTest, NormalObstacleFlagsAreProcessed)
 {
     Controller& controller = normalController();
-    controller.obstacleSensorDriver.front = true;
-    controller.obstacleSensorDriver.left = true;
-    controller.obstacleSensorDriver.right = true;
+    // [변경] stored obstacle path uses front/left plus recheck state instead of right sensor input.
+    controller.obstacleSensorDriver.setObstacleInput(true, true);
+    controller.obstacleSensorDriver.setFrontAfterRightTurn(true);
+    controller.obstacleSensorDriver.setBackwardRecheck(true, true);
 
     controller.clockTick();
 
@@ -1133,9 +1150,10 @@ TEST_F(ControllerClockTickTest, NormalDustAndObstacleAreBothProcessedInOrder)
 {
     Controller& controller = normalController();
     controller.dustSensorDriver.dustDetected = true;
-    controller.obstacleSensorDriver.front = true;
-    controller.obstacleSensorDriver.left = true;
-    controller.obstacleSensorDriver.right = true;
+    // [변경] right sensor state 제거에 따라 stored recheck state로 all-blocked path를 표현한다.
+    controller.obstacleSensorDriver.setObstacleInput(true, true);
+    controller.obstacleSensorDriver.setFrontAfterRightTurn(true);
+    controller.obstacleSensorDriver.setBackwardRecheck(true, true);
 
     controller.clockTick();
 
@@ -1281,55 +1299,78 @@ class ObstacleProcessorTest : public ::testing::Test
 protected:
     ObstacleProcessor processor;
 
-    Direction decide(bool front, bool left, bool right) const
+    // [변경] right sensor input 제거로 processor 1차 판단 helper는 front/left만 사용한다.
+    Direction decide(bool front, bool left) const
     {
         ObstacleSensorDriver sensor;
         sensor.initialize();
-        sensor.front = front;
-        sensor.left = left;
-        sensor.right = right;
+        sensor.setObstacleInput(front, left);
         return processor.decideDirection(sensor);
+    }
+
+    // [추가] 우회전 후 front sensor recheck 결과를 processor에 전달한다.
+    Direction decideAfterRightTurn(bool frontAfterRightTurn) const
+    {
+        ObstacleSensorDriver sensor;
+        sensor.initialize();
+        sensor.setFrontAfterRightTurn(frontAfterRightTurn);
+        return processor.decideDirectionAfterRightTurn(sensor);
+    }
+
+    // [추가] 후진 중 left와 right-through-front 재확인 결과를 processor에 전달한다.
+    Direction decideAfterBackward(bool leftAfterBackward,
+                                  bool frontAfterBackwardRightCheck) const
+    {
+        ObstacleSensorDriver sensor;
+        sensor.initialize();
+        sensor.setBackwardRecheck(leftAfterBackward, frontAfterBackwardRightCheck);
+        return processor.decideDirectionAfterBackwardRecheck(sensor);
     }
 };
 
 TEST_F(ObstacleProcessorTest, AllClearChoosesForward)
 {
-    EXPECT_EQ(decide(false, false, false), Direction::Forward);
+    EXPECT_EQ(decide(false, false), Direction::Forward);
 }
 
 TEST_F(ObstacleProcessorTest, FrontClearIgnoresLeftObstacle)
 {
-    EXPECT_EQ(decide(false, true, false), Direction::Forward);
+    EXPECT_EQ(decide(false, true), Direction::Forward);
 }
 
-TEST_F(ObstacleProcessorTest, FrontClearIgnoresRightObstacle)
+TEST_F(ObstacleProcessorTest, FrontBlockedWithLeftClearChoosesLeft)
 {
-    EXPECT_EQ(decide(false, false, true), Direction::Forward);
+    EXPECT_EQ(decide(true, false), Direction::Left);
 }
 
-TEST_F(ObstacleProcessorTest, FrontClearIgnoresSideObstacles)
+TEST_F(ObstacleProcessorTest, FrontAndLeftBlockedRequestsRightTurnRecheck)
 {
-    EXPECT_EQ(decide(false, true, true), Direction::Forward);
+    EXPECT_EQ(decide(true, true), Direction::Right);
 }
 
-TEST_F(ObstacleProcessorTest, FrontBlockedWithBothSidesClearChoosesLeft)
+TEST_F(ObstacleProcessorTest, RightTurnFrontClearChoosesForward)
 {
-    EXPECT_EQ(decide(true, false, false), Direction::Left);
+    EXPECT_EQ(decideAfterRightTurn(false), Direction::Forward);
 }
 
-TEST_F(ObstacleProcessorTest, FrontBlockedWithOnlyLeftClearChoosesLeft)
+TEST_F(ObstacleProcessorTest, RightTurnFrontBlockedChoosesBackwardRecovery)
 {
-    EXPECT_EQ(decide(true, false, true), Direction::Left);
+    EXPECT_EQ(decideAfterRightTurn(true), Direction::Backward);
 }
 
-TEST_F(ObstacleProcessorTest, FrontAndLeftBlockedWithRightClearChoosesRight)
+TEST_F(ObstacleProcessorTest, BackwardRecheckChoosesLeftBeforeRight)
 {
-    EXPECT_EQ(decide(true, true, false), Direction::Right);
+    EXPECT_EQ(decideAfterBackward(false, false), Direction::Left);
 }
 
-TEST_F(ObstacleProcessorTest, AllDirectionsBlockedChoosesBackward)
+TEST_F(ObstacleProcessorTest, BackwardRecheckChoosesRightWhenLeftBlocked)
 {
-    EXPECT_EQ(decide(true, true, true), Direction::Backward);
+    EXPECT_EQ(decideAfterBackward(true, false), Direction::Right);
+}
+
+TEST_F(ObstacleProcessorTest, BackwardRecheckAllBlockedKeepsBackward)
+{
+    EXPECT_EQ(decideAfterBackward(true, true), Direction::Backward);
 }
 
 class DustProcessorTest : public ::testing::Test
@@ -1505,7 +1546,11 @@ TEST_F(DriverStateTest, ObstacleSensorClearAndHasObstacle)
 
     EXPECT_FALSE(sensor.front);
     EXPECT_FALSE(sensor.left);
-    EXPECT_FALSE(sensor.right);
+    // [삭제] right sensor state expectation removed.
+    // [추가] recheck state is reset to blocked until a simulator/test supplies a fresh front recheck.
+    EXPECT_FALSE(sensor.isFrontClearAfterRightTurn());
+    EXPECT_FALSE(sensor.isLeftClearAfterBackward());
+    EXPECT_FALSE(sensor.isRightClearAfterBackward());
     EXPECT_FALSE(sensor.hasObstacle());
 }
 

@@ -31,7 +31,8 @@ public:
     LowBatteryMode lowBatteryMode;
     OperatingMode* currentMode;
 
-    Controller() = default;
+    // [추가] simulator/test에서 Controller stack address 재사용 시 stale state를 제거한다.
+    Controller();
 
     void powerButtonPressed();
     void startButtonPressed();

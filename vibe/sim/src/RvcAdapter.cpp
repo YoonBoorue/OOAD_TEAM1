@@ -89,12 +89,29 @@ void RvcAdapter::feedSensors(const SensorSnapshot &sensors)
         controller_.dustDetected();
     }
 
-    const bool blocked[3] = {
-        sensors.obstacleBlocked[0],
-        sensors.obstacleBlocked[1],
-        sensors.obstacleBlocked[2],
-    };
-    controller_.obstacleDetected(blocked);
+    // [추가] obstacle/recheck signal이 없으면 obstacle flow를 호출하지 않는다.
+    const bool hasObstacleEvent =
+        sensors.obstacleBlocked[0] ||
+        sensors.obstacleBlocked[1] ||
+        sensors.frontAfterRightTurnBlocked ||
+        sensors.leftAfterBackwardBlocked ||
+        sensors.frontAfterBackwardRightCheckBlocked;
+    if (!hasObstacleEvent)
+    {
+        return;
+    }
+
+    // [변경] right sensor input 제거로 front/left만 immediate obstacle input으로 전달한다.
+    controller_.obstacleSensorDriver.setObstacleInput(sensors.obstacleBlocked[0],
+                                                      sensors.obstacleBlocked[1]);
+    // [추가] right path는 turnRight 후 front sensor recheck 결과로 전달한다.
+    controller_.obstacleSensorDriver.setFrontAfterRightTurn(
+        sensors.frontAfterRightTurnBlocked);
+    // [추가] 후진 중 left 우선/오른쪽 확인도 recheck state로 전달한다.
+    controller_.obstacleSensorDriver.setBackwardRecheck(
+        sensors.leftAfterBackwardBlocked,
+        sensors.frontAfterBackwardRightCheckBlocked);
+    controller_.obstacleDetected();
 
     if (isCurrentMode<rvc::BoostMode>(controller_))
     {

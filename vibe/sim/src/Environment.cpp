@@ -60,11 +60,16 @@ SensorSnapshot Environment::sense(rvc::Direction heading) const
 {
     SensorSnapshot snapshot;
     snapshot.dustDetected = room_.hasDust(pose_.position);
+    // [변경] front/left만 immediate obstacle input으로 제공한다.
     snapshot.obstacleBlocked = {
         blockedInDirection(heading),
         blockedInDirection(leftOf(heading)),
-        blockedInDirection(rightOf(heading)),
     };
+    // [추가] right는 우회전 후 front sensor로 재확인되는 값으로 분리한다.
+    snapshot.frontAfterRightTurnBlocked = blockedInDirection(rightOf(heading));
+    // [추가] 후진 중 비어있는 방향 선택도 left 우선과 right-through-front 재확인값으로 제공한다.
+    snapshot.leftAfterBackwardBlocked = blockedInDirection(leftOf(heading));
+    snapshot.frontAfterBackwardRightCheckBlocked = blockedInDirection(rightOf(heading));
     snapshot.batteryLevel = batteryLevel_;
     return snapshot;
 }

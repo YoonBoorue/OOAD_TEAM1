@@ -95,6 +95,13 @@ void handleObstacleAvoidance(Controller& controller)
     const Direction selectedDirection =
         controller.obstacleProcessor.decideDirection(controller.obstacleSensorDriver);
     controller.cleanerDriver.stopCleaning();
+    // [변경] right-recheck avoidance flow는 실제 청소 중인 mode에서만 수행하고, safe mode는 mode 정책에 맡긴다.
+    if (!isActiveCleaningMode(controller.currentMode))
+    {
+        controller.currentMode->checkIsMoving(selectedDirection, controller.motorDriver);
+        return;
+    }
+
     if (selectedDirection == Direction::Right)
     {
         controller.motorDriver.turnRight();
@@ -134,6 +141,18 @@ void handleObstacleAvoidance(Controller& controller)
     }
 }
 } // namespace
+
+// [추가] Controller 객체 주소가 재사용될 때 이전 stateFor() map entry가 새 인스턴스에 적용되지 않게 한다.
+Controller::Controller()
+    : currentMode(nullptr)
+{
+    controllerStates.erase(this);
+    batteryDriver.initialize();
+    cleanerDriver.initialize();
+    motorDriver.initialize();
+    obstacleSensorDriver.initialize();
+    dustSensorDriver.initialize();
+}
 
 void Controller::powerButtonPressed()
 {

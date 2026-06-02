@@ -27,7 +27,7 @@
 | P09 | `tc/P09_charging_accepted_in_standby.rvc` | UC10 Charge Battery | `chargeBattery()` | Positive | 낮은 배터리에서 `StandbyMode` 충전 요청 후 charging on, cleaning inactive |
 | P10 | `tc/P10_stop_charging_safe_non_cleaning.rvc` | UC16 Stop Charging | `stopCharging()` | Positive | charging 중 stop 요청 후 `StandbyMode`, charging off, motor/cleaner off |
 | P11 | `tc/P11_obstacle_front_blocked_left_clear_active.rvc` | UC5 Avoid Obstacle, UC12 Turn Left | `obstacleDetected(front)` | Positive | `NormalMode`에서 front blocked/left clear 입력 후 system active, motor/cleaner on |
-| P12 | `tc/P12_obstacle_all_blocked_active_avoiding.rvc` | UC5 Avoid Obstacle, UC14 Move Backward | `obstacleDetected(all)` | Positive | `NormalMode`에서 all blocked 입력 후 system active, direction `Backward`, motor/cleaner on |
+| P12 | `tc/P12_obstacle_all_blocked_active_avoiding.rvc` | UC5 Avoid Obstacle, UC13 Turn Right, UC14 Move Backward | `obstacleDetected(front/left)` plus front recheck | Positive | [변경] `NormalMode`에서 right path clear는 forward 재개, all checked paths blocked는 `Backward`, motor/cleaner on |
 | N01 | `tc/N01_start_while_off_does_not_enter_normal.rvc` | UC2 Set Cleaning Mode | `startButtonPressed()` | Negative | `Off`에서 start 입력은 `NormalMode`로 전이하지 않고 motor/cleaner off 유지 |
 | N02 | `tc/N02_dust_while_off_does_not_enter_boost.rvc` | UC6 Adjust Boost Mode | `dustDetected()` | Negative | `Off`에서 dust 입력은 `BoostMode`로 전이하지 않음 |
 | N03 | `tc/N03_dust_while_standby_does_not_enter_boost.rvc` | UC6 Adjust Boost Mode | `dustDetected()` | Negative | `StandbyMode`에서 dust 입력은 `BoostMode`로 전이하지 않음 |

@@ -60,6 +60,16 @@ const char* directionName(rvc::Direction direction)
     return "UnknownDirection";
 }
 
+// [추가] right sensor input 대신 front/left 입력과 front sensor recheck 결과를 함께 전달한다.
+struct ObstacleScenario
+{
+    bool frontBlocked;
+    bool leftBlocked;
+    bool frontAfterRightTurnBlocked;
+    bool leftAfterBackwardBlocked;
+    bool frontAfterBackwardRightCheckBlocked;
+};
+
 void printState(const rvc::Controller& controller)
 {
     std::cout << "[Power: " << (controller.currentMode == nullptr ? "OFF" : "ON") << "] "
@@ -75,25 +85,34 @@ void printMenu()
 {
     std::cout << "\n"
               << "1) Power Button  2) Start Button  3) Dust Detected\n"
-              << "4) Obstacle Front  5) Obstacle Left  6) Obstacle Right  7) Obstacle All\n"
+              << "4) Obstacle Front  5) Obstacle Left  6) Right Path Clear  7) Obstacle All\n"
               << "8) Low Battery  9) Charge Battery  10) Stop Charging\n"
               << "11) Timer Expired  12) Clock Tick  13) Charge Tick\n"
               << "14) Low Battery Cleared  0) Exit\n"
               << "> ";
 }
 
-void runObstacleCommand(rvc::Controller& controller, const bool direction[3], bool printAvoidance)
+// [변경] f8be8cc의 direction[3] simulator input을 front/left + recheck scenario로 대체한다.
+void runObstacleCommand(rvc::Controller& controller,
+                        const ObstacleScenario& scenario,
+                        bool printAvoidance)
 {
     rvc::ObstacleSensorDriver obstacleSnapshot;
     obstacleSnapshot.initialize();
-    obstacleSnapshot.front = direction[0];
-    obstacleSnapshot.left = direction[1];
-    obstacleSnapshot.right = direction[2];
+    obstacleSnapshot.setObstacleInput(scenario.frontBlocked, scenario.leftBlocked);
+    obstacleSnapshot.setFrontAfterRightTurn(scenario.frontAfterRightTurnBlocked);
+    obstacleSnapshot.setBackwardRecheck(scenario.leftAfterBackwardBlocked,
+                                        scenario.frontAfterBackwardRightCheckBlocked);
 
     const rvc::Direction selectedDirection =
         controller.obstacleProcessor.decideDirection(obstacleSnapshot);
 
-    controller.obstacleDetected(direction);
+    controller.obstacleSensorDriver.setObstacleInput(scenario.frontBlocked, scenario.leftBlocked);
+    controller.obstacleSensorDriver.setFrontAfterRightTurn(scenario.frontAfterRightTurnBlocked);
+    controller.obstacleSensorDriver.setBackwardRecheck(
+        scenario.leftAfterBackwardBlocked,
+        scenario.frontAfterBackwardRightCheckBlocked);
+    controller.obstacleDetected();
     controller.obstacleSensorDriver.clear();
 
     if (printAvoidance)
@@ -119,23 +138,24 @@ void runCommand(rvc::Controller& controller, const std::string& command)
     }
     else if (command == "obstacle_front")
     {
-        const bool direction[3] = {true, false, false};
-        runObstacleCommand(controller, direction, false);
+        const ObstacleScenario scenario{true, false, true, true, true};
+        runObstacleCommand(controller, scenario, false);
     }
     else if (command == "obstacle_left")
     {
-        const bool direction[3] = {false, true, false};
-        runObstacleCommand(controller, direction, false);
+        const ObstacleScenario scenario{false, true, true, true, true};
+        runObstacleCommand(controller, scenario, false);
     }
-    else if (command == "obstacle_right")
+    else if (command == "obstacle_right_clear")
     {
-        const bool direction[3] = {false, false, true};
-        runObstacleCommand(controller, direction, false);
+        // [변경] right sensor command는 우회전 후 front clear recheck scenario로 해석한다.
+        const ObstacleScenario scenario{true, true, false, true, true};
+        runObstacleCommand(controller, scenario, false);
     }
     else if (command == "obstacle_all")
     {
-        const bool direction[3] = {true, true, true};
-        runObstacleCommand(controller, direction, false);
+        const ObstacleScenario scenario{true, true, true, true, true};
+        runObstacleCommand(controller, scenario, false);
     }
     else if (command == "low_battery")
     {
@@ -338,26 +358,27 @@ int runInteractive()
             break;
         case 4:
         {
-            const bool direction[3] = {true, false, false};
-            runObstacleCommand(controller, direction, true);
+            const ObstacleScenario scenario{true, false, true, true, true};
+            runObstacleCommand(controller, scenario, true);
             break;
         }
         case 5:
         {
-            const bool direction[3] = {false, true, false};
-            runObstacleCommand(controller, direction, true);
+            const ObstacleScenario scenario{false, true, true, true, true};
+            runObstacleCommand(controller, scenario, true);
             break;
         }
         case 6:
         {
-            const bool direction[3] = {false, false, true};
-            runObstacleCommand(controller, direction, true);
+            // [변경] menu 6은 right sensor가 아니라 우회전 후 front clear 확인을 시뮬레이션한다.
+            const ObstacleScenario scenario{true, true, false, true, true};
+            runObstacleCommand(controller, scenario, true);
             break;
         }
         case 7:
         {
-            const bool direction[3] = {true, true, true};
-            runObstacleCommand(controller, direction, true);
+            const ObstacleScenario scenario{true, true, true, true, true};
+            runObstacleCommand(controller, scenario, true);
             break;
         }
         case 8:

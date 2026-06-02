@@ -1,6 +1,14 @@
-# P12: Obstacle all blocked keeps the system active while avoiding.
+# [변경] P12: Right path is checked by turnRight()+front recheck, then all-blocked recovery stays active.
 power
 start
+# [추가] front/left blocked, right path clear after turnRight front recheck.
+obstacle_right_clear
+expect_mode NormalMode
+expect_motor on
+expect_cleaner on
+expect_boost off
+expect_direction Forward
+# [변경] all blocked means front/left blocked and right/front recheck also blocked.
 obstacle_all
 expect_mode NormalMode
 expect_motor on
