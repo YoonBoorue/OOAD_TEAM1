@@ -35,6 +35,9 @@ public:
 private:
     rvc::Controller controller_;
     int boostTicks_;
+    // [추가] map simulator는 robot heading과 실제 좌표 이동 방향을 adapter에서 유지한다.
+    rvc::Direction heading_;
+    rvc::Direction movementDirection_;
 };
 
 } // namespace sim

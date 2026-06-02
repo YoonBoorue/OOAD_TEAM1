@@ -194,6 +194,26 @@ TEST(SimulationLoopTest, RvcAdapterMarksBackwardCommandAsNotForward)
     EXPECT_EQ(actuators.motorDirection, rvc::Direction::Backward);
 }
 
+TEST(SimulationLoopTest, RvcAdapterMapsRightRecheckClearToRightMovement)
+{
+    sim::RvcAdapter adapter;
+    adapter.powerOnAndStart();
+
+    sim::SensorSnapshot sensors;
+    // [추가] front/left blocked 후 right path clear는 map 좌표상 오른쪽 이동으로 표현한다.
+    sensors.obstacleBlocked = {true, true};
+    sensors.frontAfterRightTurnBlocked = false;
+    sensors.leftAfterBackwardBlocked = true;
+    sensors.frontAfterBackwardRightCheckBlocked = true;
+    adapter.feedSensors(sensors);
+
+    const sim::ActuatorSnapshot actuators = adapter.actuators();
+    EXPECT_TRUE(actuators.motorMoving);
+    EXPECT_TRUE(actuators.motorForward);
+    EXPECT_EQ(actuators.motorDirection, rvc::Direction::Right);
+    EXPECT_EQ(adapter.heading(), rvc::Direction::Right);
+}
+
 TEST(MapLoaderTest, MalformedMapReportsParseError)
 {
     std::istringstream map(

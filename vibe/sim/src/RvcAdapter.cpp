@@ -2,6 +2,8 @@
 
 #include "rvc/BatteryDriver.hpp"
 
+#include "sim/DirectionUtil.hpp"
+
 namespace sim
 {
 
@@ -9,6 +11,24 @@ namespace
 {
 
 constexpr int BoostDurationTicks = 5;
+
+// [추가] 후진 이동을 현재 heading의 반대 좌표 방향으로 변환한다.
+rvc::Direction backOf(rvc::Direction direction)
+{
+    switch (direction)
+    {
+    case rvc::Direction::Forward:
+        return rvc::Direction::Backward;
+    case rvc::Direction::Left:
+        return rvc::Direction::Right;
+    case rvc::Direction::Right:
+        return rvc::Direction::Left;
+    case rvc::Direction::Backward:
+        return rvc::Direction::Forward;
+    }
+
+    return rvc::Direction::Backward;
+}
 
 template <typename Mode>
 bool isCurrentMode(const rvc::Controller &controller)
@@ -50,7 +70,9 @@ std::string currentModeName(const rvc::Controller &controller)
 
 RvcAdapter::RvcAdapter()
     : controller_(),
-      boostTicks_(0)
+      boostTicks_(0),
+      heading_(rvc::Direction::Forward),
+      movementDirection_(rvc::Direction::Forward)
 {
     controller_.clockTick();
 }
@@ -70,6 +92,7 @@ void RvcAdapter::powerOnAndStart()
 
 void RvcAdapter::feedSensors(const SensorSnapshot &sensors)
 {
+    const rvc::Direction headingBeforeSensors = heading_;
     controller_.batteryDriver.level = sensors.batteryLevel;
 
     if (sensors.batteryLevel <= rvc::BatteryDriver::LowBatteryThreshold)
@@ -89,15 +112,13 @@ void RvcAdapter::feedSensors(const SensorSnapshot &sensors)
         controller_.dustDetected();
     }
 
-    // [추가] obstacle/recheck signal이 없으면 obstacle flow를 호출하지 않는다.
+    // [변경] immediate front/left obstacle이 없으면 recheck state만으로 obstacle flow를 호출하지 않는다.
     const bool hasObstacleEvent =
         sensors.obstacleBlocked[0] ||
-        sensors.obstacleBlocked[1] ||
-        sensors.frontAfterRightTurnBlocked ||
-        sensors.leftAfterBackwardBlocked ||
-        sensors.frontAfterBackwardRightCheckBlocked;
+        sensors.obstacleBlocked[1];
     if (!hasObstacleEvent)
     {
+        movementDirection_ = heading_;
         return;
     }
 
@@ -112,6 +133,39 @@ void RvcAdapter::feedSensors(const SensorSnapshot &sensors)
         sensors.leftAfterBackwardBlocked,
         sensors.frontAfterBackwardRightCheckBlocked);
     controller_.obstacleDetected();
+
+    // [추가] Controller의 relative turn+forward 결과를 map 좌표상의 실제 이동 방향으로 변환한다.
+    if (sensors.obstacleBlocked[0])
+    {
+        if (!sensors.obstacleBlocked[1])
+        {
+            heading_ = leftOf(headingBeforeSensors);
+            movementDirection_ = heading_;
+        }
+        else if (!sensors.frontAfterRightTurnBlocked)
+        {
+            heading_ = rightOf(headingBeforeSensors);
+            movementDirection_ = heading_;
+        }
+        else if (!sensors.leftAfterBackwardBlocked)
+        {
+            heading_ = leftOf(headingBeforeSensors);
+            movementDirection_ = heading_;
+        }
+        else if (!sensors.frontAfterBackwardRightCheckBlocked)
+        {
+            heading_ = rightOf(headingBeforeSensors);
+            movementDirection_ = heading_;
+        }
+        else
+        {
+            movementDirection_ = backOf(headingBeforeSensors);
+        }
+    }
+    else
+    {
+        movementDirection_ = heading_;
+    }
 
     if (isCurrentMode<rvc::BoostMode>(controller_))
     {
@@ -162,7 +216,7 @@ ActuatorSnapshot RvcAdapter::actuators() const
 {
     ActuatorSnapshot snapshot;
     snapshot.motorMoving = controller_.motorDriver.isRunning;
-    snapshot.motorDirection = controller_.motorDriver.direction;
+    snapshot.motorDirection = movementDirection_;
     snapshot.motorForward = controller_.motorDriver.direction != rvc::Direction::Backward;
     snapshot.cleanerRunning = controller_.cleanerDriver.isRunning;
     snapshot.cleanerBoost = controller_.cleanerDriver.isBoosting;
@@ -171,7 +225,7 @@ ActuatorSnapshot RvcAdapter::actuators() const
 
 rvc::Direction RvcAdapter::heading() const
 {
-    return controller_.motorDriver.direction;
+    return heading_;
 }
 
 std::string RvcAdapter::modeName() const

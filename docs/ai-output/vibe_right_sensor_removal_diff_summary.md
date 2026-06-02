@@ -136,10 +136,12 @@
 - 오른쪽 방향은 `rightOf(heading)`을 즉시 right sensor로 넘기지 않고, `frontAfterRightTurnBlocked`로 분리해 전달한다.
 - `RvcAdapter::feedSensors()`는 obstacle/recheck signal이 있을 때만 obstacle flow를 호출한다.
 - `RvcAdapter`는 `Controller::obstacleDetected(direction[2])` 대신 sensor driver에 recheck state를 세팅한 뒤 `Controller::obstacleDetected()`를 호출한다.
+- map simulator에서는 Controller의 "turn right 후 forward" 명령을 좌표계 기준 오른쪽 이동으로 보여주기 위해 adapter가 robot heading과 실제 movement direction을 유지한다.
 
 ### Simulator test 변경
 
 - all blocked simulator test는 `obstacleBlocked = {true, true}`와 recheck blocked state를 함께 설정한다.
+- right path clear simulator test는 front/left blocked 후 front recheck clear일 때 map 좌표상 `Right` 이동으로 변환되는지 확인한다.
 - simulator loop test 일부는 현재 simulator 정책에 맞게 독립 실행 가능하도록 조정되었다.
 - 특히 autoStart 상태에서 charging key는 충전을 시작하지 않고, active cleaning tick의 배터리 소모만 반영하는 것으로 검증한다.
 
@@ -178,8 +180,8 @@ ctest --test-dir /private/tmp/ooad_vibe_verify_all --output-on-failure
 
 - Unit test: `105/105 passed`
 - System test: `42/42 passed`
-- Simulator test: `8/8 passed`
-- 전체 CTest: `155/155 passed`
+- Simulator test: `9/9 passed`
+- 전체 CTest: `156/156 passed`
 - `git diff --check`: passed
 
 ## 핵심 결론
