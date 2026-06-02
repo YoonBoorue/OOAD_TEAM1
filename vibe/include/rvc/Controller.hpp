@@ -40,6 +40,7 @@ public:
     void lowBatteryDetected();
     void lowBatteryCleared();
     void dustDetected();
+    // [변경] f8be8cc의 direction[3]에서 right sensor input을 제거한다.
     void obstacleDetected(const bool direction[2]);
     void obstacleDetected();
     void timerExpired();
