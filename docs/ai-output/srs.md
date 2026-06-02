@@ -464,7 +464,7 @@ System Operation은 actor/device/event가 `:RVCSystem` boundary로 보내는 inc
 | `lowBatteryDetected()` | UC15 | Battery low-battery signal | source: project artifact | Repo method: `Controller::lowBatteryDetected()` |
 | `lowBatteryCleared()` | UC15 recovery | Battery state recovers above low threshold | source: project artifact | Repo method: `Controller::lowBatteryCleared()` |
 | `dustDetected()` | UC6 | Dust signal | source: project artifact | Repo method: `Controller::dustDetected()` |
-| `obstacleDetected(direction)` | UC5, UC12, UC13, UC14 | Obstacle information | source: project artifact | Repo method: `Controller::obstacleDetected(const bool direction[3])` |
+| `obstacleDetected(direction)` | UC5, UC12, UC13, UC14 | Obstacle information | source: project artifact | Repo method: `Controller::obstacleDetected(const bool direction[2])` [변경] |
 | `timerExpired()` | UC6 | Boost timer expires | source: project artifact | Requirement/system operation name; repo-level helper is `Controller::timerExpiredNow()` and simulator command is `timer-expired` |
 | `clockTick()` | Common periodic behavior, UC2 | `DigitalClockTick` | source: project artifact | Artifact-only / not implemented as a general repo operation |
 | `chargingTick()` | UC10, UC15 recovery, UC16 support | Charging loop/tick event | source: implementation/test | Repo method: `Controller::chargingTick()`; partially substitutes artifact-level `clockTick()` for charging behavior only |
