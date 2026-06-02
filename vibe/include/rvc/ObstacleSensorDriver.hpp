@@ -15,6 +15,8 @@ public:
     bool frontAfterRightTurn;
     bool leftAfterBackward;
     bool frontAfterBackwardRightCheck;
+    // [추가] all-blocked 후진 이후 다음 sensor tick에서 후진 재확인 flow를 이어가기 위한 상태이다.
+    bool backwardRecoveryPending;
 
     ObstacleSensorDriver() = default;
 
@@ -27,6 +29,9 @@ public:
     bool isFrontClearAfterRightTurn() const;
     bool isLeftClearAfterBackward() const;
     bool isRightClearAfterBackward() const;
+    bool isBackwardRecoveryPending() const;
+    void markBackwardRecoveryPending();
+    void clearBackwardRecovery();
     bool hasObstacle() const;
 };
 

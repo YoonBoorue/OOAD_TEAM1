@@ -72,7 +72,8 @@ RvcAdapter::RvcAdapter()
     : controller_(),
       boostTicks_(0),
       heading_(rvc::Direction::Forward),
-      movementDirection_(rvc::Direction::Forward)
+      movementDirection_(rvc::Direction::Forward),
+      movementForward_(true)
 {
     controller_.clockTick();
 }
@@ -93,11 +94,14 @@ void RvcAdapter::powerOnAndStart()
 void RvcAdapter::feedSensors(const SensorSnapshot &sensors)
 {
     const rvc::Direction headingBeforeSensors = heading_;
+    const bool wasBackwardRecoveryPending =
+        controller_.obstacleSensorDriver.isBackwardRecoveryPending();
     controller_.batteryDriver.level = sensors.batteryLevel;
 
     if (sensors.batteryLevel <= rvc::BatteryDriver::LowBatteryThreshold)
     {
         controller_.lowBatteryDetected();
+        movementForward_ = false;
         return;
     }
 
@@ -112,13 +116,15 @@ void RvcAdapter::feedSensors(const SensorSnapshot &sensors)
         controller_.dustDetected();
     }
 
-    // [변경] immediate front/left obstacle이 없으면 recheck state만으로 obstacle flow를 호출하지 않는다.
+    // [변경] immediate front/left obstacle 또는 core의 backward recovery pending 상태일 때 obstacle flow를 호출한다.
     const bool hasObstacleEvent =
         sensors.obstacleBlocked[0] ||
-        sensors.obstacleBlocked[1];
+        sensors.obstacleBlocked[1] ||
+        wasBackwardRecoveryPending;
     if (!hasObstacleEvent)
     {
         movementDirection_ = heading_;
+        movementForward_ = true;
         return;
     }
 
@@ -135,36 +141,64 @@ void RvcAdapter::feedSensors(const SensorSnapshot &sensors)
     controller_.obstacleDetected();
 
     // [추가] Controller의 relative turn+forward 결과를 map 좌표상의 실제 이동 방향으로 변환한다.
-    if (sensors.obstacleBlocked[0])
+    if (wasBackwardRecoveryPending)
     {
-        if (!sensors.obstacleBlocked[1])
+        // [변경] backward recovery 중에는 front clear만 보고 전진하지 않고 left/right 재확인을 우선한다.
+        if (!sensors.leftAfterBackwardBlocked)
         {
             heading_ = leftOf(headingBeforeSensors);
             movementDirection_ = heading_;
-        }
-        else if (!sensors.frontAfterRightTurnBlocked)
-        {
-            heading_ = rightOf(headingBeforeSensors);
-            movementDirection_ = heading_;
-        }
-        else if (!sensors.leftAfterBackwardBlocked)
-        {
-            heading_ = leftOf(headingBeforeSensors);
-            movementDirection_ = heading_;
+            movementForward_ = true;
         }
         else if (!sensors.frontAfterBackwardRightCheckBlocked)
         {
             heading_ = rightOf(headingBeforeSensors);
             movementDirection_ = heading_;
+            movementForward_ = true;
         }
         else
         {
             movementDirection_ = backOf(headingBeforeSensors);
+            movementForward_ = false;
+        }
+    }
+    else if (sensors.obstacleBlocked[0])
+    {
+        if (!sensors.obstacleBlocked[1])
+        {
+            heading_ = leftOf(headingBeforeSensors);
+            movementDirection_ = heading_;
+            movementForward_ = true;
+        }
+        else if (!sensors.frontAfterRightTurnBlocked)
+        {
+            heading_ = rightOf(headingBeforeSensors);
+            movementDirection_ = heading_;
+            movementForward_ = true;
+        }
+        else if (!sensors.leftAfterBackwardBlocked)
+        {
+            heading_ = leftOf(headingBeforeSensors);
+            movementDirection_ = heading_;
+            movementForward_ = true;
+        }
+        else if (!sensors.frontAfterBackwardRightCheckBlocked)
+        {
+            heading_ = rightOf(headingBeforeSensors);
+            movementDirection_ = heading_;
+            movementForward_ = true;
+        }
+        else
+        {
+            // [변경] 모든 재확인 방향이 막힌 경우 core의 backward recovery pending 상태가 유지된다.
+            movementDirection_ = backOf(headingBeforeSensors);
+            movementForward_ = false;
         }
     }
     else
     {
         movementDirection_ = heading_;
+        movementForward_ = true;
     }
 
     if (isCurrentMode<rvc::BoostMode>(controller_))
@@ -217,7 +251,7 @@ ActuatorSnapshot RvcAdapter::actuators() const
     ActuatorSnapshot snapshot;
     snapshot.motorMoving = controller_.motorDriver.isRunning;
     snapshot.motorDirection = movementDirection_;
-    snapshot.motorForward = controller_.motorDriver.direction != rvc::Direction::Backward;
+    snapshot.motorForward = movementForward_;
     snapshot.cleanerRunning = controller_.cleanerDriver.isRunning;
     snapshot.cleanerBoost = controller_.cleanerDriver.isBoosting;
     return snapshot;

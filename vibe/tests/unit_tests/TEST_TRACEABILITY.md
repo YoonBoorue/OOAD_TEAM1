@@ -1,6 +1,6 @@
 # RVC Vibe Unit Test Traceability
 
-Scope: `vibe/tests/rvc_unit_tests.cpp` contains 105 Google Test unit tests for the current `vibe/include/rvc/*.hpp` APIs. [변경]
+Scope: `vibe/tests/rvc_unit_tests.cpp` contains 106 Google Test unit tests for the current `vibe/include/rvc/*.hpp` APIs. [변경]
 
 | Test suite | Test count | Related use case | System/internal operation | Class/method | Expected mode or driver state |
 |---|---:|---|---|---|---|
@@ -12,11 +12,11 @@ Scope: `vibe/tests/rvc_unit_tests.cpp` contains 105 Google Test unit tests for t
 | `ControllerLowBatteryClearedTest` | 4 | FR-003 Low-battery recovery, UC15 Enter Low Battery Mode | `lowBatteryCleared()` | `Controller::lowBatteryCleared()`, `LowBatteryMode::lowBatteryCleared()` | `LowBatteryMode` recovers to `StandbyMode`; other on modes keep mode and clear battery flag; off ignores event |
 | `ControllerChargeBatteryTest` | 9 | UC10 Charge Battery, UC15 recovery | `chargeBattery()`, `chargingTick()` | `Controller::chargeBattery()`, `Controller::chargingTick()`, `BatteryDriver::startCharging()` | Off/standby/low-battery charge when not full; normal/boost reject charging; full battery stops charging; low-battery charging returns to `StandbyMode` |
 | `ControllerStopChargingTest` | 4 | UC16 Stop Charging | `stopCharging()` | `Controller::stopCharging()`, `BatteryDriver::stopCharging()` | Charging flag becomes false; no-mode state creates `StandbyMode`; active cleaning mode is preserved by current implementation |
-| `ControllerObstacleDetectedTest` | 12 | UC5 Avoid Obstacle, UC12 Turn Left, UC13 Turn Right, UC14 Move Backward | `obstacleDetected(direction)`, `obstacleDetected()` | `Controller::obstacleDetected()`, `ObstacleProcessor::decideDirection()`, mode `checkIsMoving()` | Normal/boost process direction and resume cleaner; all blocked moves backward; off/null input no-op; standby/low-battery stay stopped |
+| `ControllerObstacleDetectedTest` | 13 | UC5 Avoid Obstacle, UC12 Turn Left, UC13 Turn Right, UC14 Move Backward | `obstacleDetected(direction)`, `obstacleDetected()` | `Controller::obstacleDetected()`, `ObstacleProcessor::decideDirection()`, mode `checkIsMoving()` | Normal/boost process direction and resume cleaner; all blocked moves backward; backward recovery does not return forward until recheck direction is clear [변경]; off/null input no-op; standby/low-battery stay stopped |
 | `ControllerClockTickTest` | 8 | FR-002 Periodic check, UC6, UC5, UC10, UC15 | `clockTick()` | `Controller::clockTick()`, `chargingTick()`, `dustDetected()`, `obstacleDetected()`, `lowBatteryDetected()` | Charging advances; low battery has priority; dust enters boost; obstacle updates motor direction; low-battery charging can recover to `StandbyMode` |
 | `OperatingModeTransitionTest` | 8 | UC2, UC7, UC6, UC15 | major internal mode transition operations | `StandbyMode`, `NormalMode`, `BoostMode`, `LowBatteryMode` transition methods | Concrete modes return expected next mode and update motor/cleaner state according to OOAD mode responsibility |
 | `ObstacleProcessorTest` | 9 | UC5 Avoid Obstacle, UC12, UC13, UC14 | obstacle decision logic | `ObstacleProcessor::decideDirection()`, recheck decisions | [변경] front/left input selects first action; [추가] right availability and backward recovery use front sensor recheck with left priority |
 | `DustProcessorTest` | 4 | UC6 Adjust Boost Mode | dust decision logic | `DustProcessor::shouldBoost()` | Boost allowed only when cleaner is running and not already boosting |
 | `DriverStateTest` | 10 | UC3, UC4, UC5, UC6, UC10, UC15, UC16 | simulated hardware state operations | `BatteryDriver`, `CleanerDriver`, `MotorDriver`, `ObstacleSensorDriver`, `DustSensorDriver` methods | Drivers own and update battery, motor, cleaner, obstacle sensor, and dust sensor state deterministically |
 
-Total: 105 tests. [변경]
+Total: 106 tests. [변경]

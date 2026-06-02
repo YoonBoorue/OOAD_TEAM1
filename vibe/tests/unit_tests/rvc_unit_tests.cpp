@@ -974,6 +974,27 @@ TEST_F(ControllerObstacleDetectedTest, NormalAllBlockedMovesBackwardAndResumesCl
     EXPECT_EQ(controller.motorDriver.direction, Direction::Backward);
     EXPECT_TRUE(controller.cleanerDriver.isRunning);
     EXPECT_FALSE(controller.cleanerDriver.isBoosting);
+    EXPECT_TRUE(controller.obstacleSensorDriver.isBackwardRecoveryPending());
+}
+
+TEST_F(ControllerObstacleDetectedTest, NormalBackwardRecoveryDoesNotReturnForwardOnClearFront)
+{
+    Controller& controller = normalController();
+
+    SendObstacleWithRecheck(controller, true, true, true, true, true);
+    ASSERT_EQ(controller.motorDriver.direction, Direction::Backward);
+    ASSERT_TRUE(controller.obstacleSensorDriver.isBackwardRecoveryPending());
+
+    // [추가] 후진 recovery 중에는 front clear가 보여도 left/right 재확인이 모두 막히면 계속 후진한다.
+    controller.obstacleSensorDriver.setObstacleInput(false, false);
+    controller.obstacleSensorDriver.setBackwardRecheck(true, true);
+    controller.obstacleDetected();
+
+    EXPECT_TRUE(IsMode<NormalMode>(controller));
+    EXPECT_TRUE(controller.motorDriver.isRunning);
+    EXPECT_EQ(controller.motorDriver.direction, Direction::Backward);
+    EXPECT_TRUE(controller.cleanerDriver.isRunning);
+    EXPECT_TRUE(controller.obstacleSensorDriver.isBackwardRecoveryPending());
 }
 
 TEST_F(ControllerObstacleDetectedTest, NoArgumentObstacleUsesStoredSensorState)

@@ -192,6 +192,15 @@ TEST(SimulationLoopTest, RvcAdapterMarksBackwardCommandAsNotForward)
     EXPECT_TRUE(actuators.motorMoving);
     EXPECT_FALSE(actuators.motorForward);
     EXPECT_EQ(actuators.motorDirection, rvc::Direction::Backward);
+
+    // [추가] all-blocked recovery 직후 clear tick은 전진 복귀가 아니라 left 우선 재확인으로 처리한다.
+    sim::SensorSnapshot clearSensors;
+    adapter.feedSensors(clearSensors);
+
+    const sim::ActuatorSnapshot recoveryActuators = adapter.actuators();
+    EXPECT_TRUE(recoveryActuators.motorMoving);
+    EXPECT_TRUE(recoveryActuators.motorForward);
+    EXPECT_EQ(recoveryActuators.motorDirection, rvc::Direction::Left);
 }
 
 TEST(SimulationLoopTest, RvcAdapterMapsRightRecheckClearToRightMovement)

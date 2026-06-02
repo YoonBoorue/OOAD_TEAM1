@@ -28,6 +28,7 @@
 - 기존에는 `direction[0]`, `direction[1]`, `direction[2]`를 각각 `front`, `left`, `right`에 저장했다.
 - 현재는 `front/left`만 저장하고, right 판단은 `ObstacleSensorDriver`에 저장된 recheck state를 통해 처리한다.
 - 장애물 회피 흐름이 `handleObstacleAvoidance()`로 분리되었다.
+- all-blocked 후진 이후에는 `backwardRecoveryPending` 상태로 후진 재확인 flow를 다음 tick까지 이어가며, front clear만 보고 즉시 전진 복귀하지 않도록 변경되었다. [추가]
 - front와 left가 모두 막힌 경우:
   - 먼저 `turnRight()` 수행
   - 우회전 후 front sensor recheck가 clear이면 `moveForward()`
@@ -42,6 +43,7 @@
   - `frontAfterRightTurn`
   - `leftAfterBackward`
   - `frontAfterBackwardRightCheck`
+  - `backwardRecoveryPending` [추가]
 - 추가된 메서드:
   - `setObstacleInput(bool frontBlocked, bool leftBlocked)`
   - `setFrontAfterRightTurn(bool frontBlocked)`
@@ -49,6 +51,9 @@
   - `isFrontClearAfterRightTurn()`
   - `isLeftClearAfterBackward()`
   - `isRightClearAfterBackward()`
+  - `isBackwardRecoveryPending()` [추가]
+  - `markBackwardRecoveryPending()` [추가]
+  - `clearBackwardRecovery()` [추가]
 - `hasObstacle()`는 더 이상 right를 보지 않고 `front || left`만 사용한다.
 
 ### `ObstacleProcessor`
@@ -136,11 +141,13 @@
 - 오른쪽 방향은 `rightOf(heading)`을 즉시 right sensor로 넘기지 않고, `frontAfterRightTurnBlocked`로 분리해 전달한다.
 - `RvcAdapter::feedSensors()`는 obstacle/recheck signal이 있을 때만 obstacle flow를 호출한다.
 - `RvcAdapter`는 `Controller::obstacleDetected(direction[2])` 대신 sensor driver에 recheck state를 세팅한 뒤 `Controller::obstacleDetected()`를 호출한다.
+- all-blocked 후진 이후에는 adapter 자체 flag가 아니라 core의 `ObstacleSensorDriver::isBackwardRecoveryPending()`을 기준으로 후진 재확인 flow를 계속한다. [변경]
 - map simulator에서는 Controller의 "turn right 후 forward" 명령을 좌표계 기준 오른쪽 이동으로 보여주기 위해 adapter가 robot heading과 실제 movement direction을 유지한다.
 
 ### Simulator test 변경
 
 - all blocked simulator test는 `obstacleBlocked = {true, true}`와 recheck blocked state를 함께 설정한다.
+- all-blocked 후진 후 clear tick에서 front clear 일반 전진으로 복귀하지 않고, backward recovery의 left 우선 재확인을 수행하는지 추가로 검증한다. [추가]
 - right path clear simulator test는 front/left blocked 후 front recheck clear일 때 map 좌표상 `Right` 이동으로 변환되는지 확인한다.
 - simulator loop test 일부는 현재 simulator 정책에 맞게 독립 실행 가능하도록 조정되었다.
 - 특히 autoStart 상태에서 charging key는 충전을 시작하지 않고, active cleaning tick의 배터리 소모만 반영하는 것으로 검증한다.
@@ -160,6 +167,7 @@
 | System test traceability | `vibe/tests/system_tests/SYSTEM_TEST_TRACEABILITY.md` |
 | Script simulator | `vibe/simulator/main.cpp` |
 | Map simulator | `vibe/sim/include/sim/Environment.hpp` |
+| Map simulator | `vibe/sim/include/sim/RvcAdapter.hpp` |
 | Map simulator | `vibe/sim/src/Environment.cpp` |
 | Map simulator | `vibe/sim/src/RvcAdapter.cpp` |
 | Simulator test | `vibe/sim/tests/SimulationLoopTest.cpp` |
@@ -178,10 +186,10 @@ ctest --test-dir /private/tmp/ooad_vibe_verify_all --output-on-failure
 
 결과:
 
-- Unit test: `105/105 passed`
+- Unit test: `106/106 passed`
 - System test: `42/42 passed`
 - Simulator test: `9/9 passed`
-- 전체 CTest: `156/156 passed`
+- 전체 CTest: `157/157 passed`
 - `git diff --check`: passed
 
 ## 핵심 결론
