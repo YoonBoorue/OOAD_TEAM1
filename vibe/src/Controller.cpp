@@ -83,7 +83,106 @@ void moveAfterBackwardRecheck(Direction direction, MotorDriver& motorDriver)
 
     motorDriver.moveBackward();
 }
+
+// [추가] front/left 입력과 저장된 recheck state를 사용해 obstacle avoidance를 수행한다.
+void handleObstacleAvoidance(Controller& controller)
+{
+    const bool shouldResumeCleaning =
+        controller.cleanerDriver.isRunning && isActiveCleaningMode(controller.currentMode);
+    const bool shouldResumeBoosting =
+        controller.cleanerDriver.isBoosting && isBoostMode(controller.currentMode);
+    const bool shouldContinueBackwardRecovery =
+        controller.obstacleSensorDriver.isBackwardRecoveryPending();
+
+    // [변경] all-blocked 후진 이후에는 front/left 일반 판단이 아니라 후진 재확인 판단을 이어간다.
+    const Direction selectedDirection =
+        shouldContinueBackwardRecovery
+            ? controller.obstacleProcessor.decideDirectionAfterBackwardRecheck(
+                  controller.obstacleSensorDriver)
+            : controller.obstacleProcessor.decideDirection(controller.obstacleSensorDriver);
+    controller.cleanerDriver.stopCleaning();
+    // [변경] right-recheck avoidance flow는 실제 청소 중인 mode에서만 수행하고, safe mode는 mode 정책에 맡긴다.
+    if (!isActiveCleaningMode(controller.currentMode))
+    {
+        controller.obstacleSensorDriver.clearBackwardRecovery();
+        controller.currentMode->checkIsMoving(selectedDirection, controller.motorDriver);
+        return;
+    }
+
+    if (shouldContinueBackwardRecovery)
+    {
+        moveAfterBackwardRecheck(selectedDirection, controller.motorDriver);
+        if (selectedDirection == Direction::Backward)
+        {
+            controller.obstacleSensorDriver.markBackwardRecoveryPending();
+        }
+        else
+        {
+            controller.obstacleSensorDriver.clearBackwardRecovery();
+        }
+    }
+    else if (selectedDirection == Direction::Right)
+    {
+        controller.motorDriver.turnRight();
+        const Direction directionAfterRightTurn =
+            controller.obstacleProcessor.decideDirectionAfterRightTurn(
+                controller.obstacleSensorDriver);
+        if (directionAfterRightTurn == Direction::Forward)
+        {
+            controller.motorDriver.moveForward();
+            controller.obstacleSensorDriver.clearBackwardRecovery();
+        }
+        else
+        {
+            // [추가] right가 막히면 left turn으로 원래 front를 복구한 뒤 backward recheck flow를 수행한다.
+            controller.motorDriver.turnLeft();
+            controller.motorDriver.moveBackward();
+            const Direction directionAfterBackward =
+                controller.obstacleProcessor.decideDirectionAfterBackwardRecheck(
+                    controller.obstacleSensorDriver);
+            moveAfterBackwardRecheck(directionAfterBackward, controller.motorDriver);
+            if (directionAfterBackward == Direction::Backward)
+            {
+                // [추가] 재확인 방향도 모두 막히면 다음 tick에서도 후진 재확인 flow를 유지한다.
+                controller.obstacleSensorDriver.markBackwardRecoveryPending();
+            }
+            else
+            {
+                controller.obstacleSensorDriver.clearBackwardRecovery();
+            }
+        }
+    }
+    else
+    {
+        controller.currentMode->checkIsMoving(selectedDirection, controller.motorDriver);
+        controller.obstacleSensorDriver.clearBackwardRecovery();
+    }
+
+    if (shouldResumeCleaning)
+    {
+        if (shouldResumeBoosting)
+        {
+            controller.cleanerDriver.decideSetting(true);
+        }
+        else
+        {
+            controller.cleanerDriver.startCleaning();
+        }
+    }
+}
 } // namespace
+
+// [추가] Controller 객체 주소가 재사용될 때 이전 stateFor() map entry가 새 인스턴스에 적용되지 않게 한다.
+Controller::Controller()
+    : currentMode(nullptr)
+{
+    controllerStates.erase(this);
+    batteryDriver.initialize();
+    cleanerDriver.initialize();
+    motorDriver.initialize();
+    obstacleSensorDriver.initialize();
+    dustSensorDriver.initialize();
+}
 
 void Controller::powerButtonPressed()
 {
@@ -168,6 +267,8 @@ void Controller::lowBatteryDetected()
     commitModeTransition(*this, previousMode, nextMode);
     batteryDriver.isLowBattery = true;
     batteryDriver.level = BatteryDriver::LowBatteryThreshold;
+    // [변경] low-battery safe mode 진입 시 obstacle recovery 상태도 종료한다.
+    obstacleSensorDriver.clearBackwardRecovery();
 }
 
 void Controller::lowBatteryCleared()
@@ -214,55 +315,21 @@ void Controller::obstacleDetected(const bool direction[2])
         return;
     }
 
-    const bool shouldResumeCleaning = cleanerDriver.isRunning && isActiveCleaningMode(currentMode);
-    const bool shouldResumeBoosting = cleanerDriver.isBoosting && isBoostMode(currentMode);
-
-    obstacleSensorDriver.front = direction[0];
-    obstacleSensorDriver.left = direction[1];
-
-    const Direction selectedDirection = obstacleProcessor.decideDirection(obstacleSensorDriver);
-    cleanerDriver.stopCleaning();
-    if (selectedDirection == Direction::Right)
-    {
-        motorDriver.turnRight();
-        if (obstacleProcessor.isFrontClearAfterRightTurn())
-        {
-            motorDriver.moveForward();
-        }
-        else
-        {
-            motorDriver.turnLeft();
-            motorDriver.moveBackward();
-            moveAfterBackwardRecheck(obstacleProcessor.decideDirectionAfterBackwardRecheck(), motorDriver);
-        }
-    }
-    else
-    {
-        currentMode->checkIsMoving(selectedDirection, motorDriver);
-    }
-
-    if (shouldResumeCleaning)
-    {
-        if (shouldResumeBoosting)
-        {
-            cleanerDriver.decideSetting(true);
-        }
-        else
-        {
-            cleanerDriver.startCleaning();
-        }
-    }
+    obstacleSensorDriver.setObstacleInput(direction[0], direction[1]);
+    handleObstacleAvoidance(*this);
 }
 
 // [변경] 저장된 obstacle sensor state에서 right sensor 입력 제외
 void Controller::obstacleDetected()
 {
-    const bool direction[2] = {
-        obstacleSensorDriver.front,
-        obstacleSensorDriver.left,
-    };
+    stateFor(*this);
 
-    obstacleDetected(direction);
+    if (currentMode == nullptr)
+    {
+        return;
+    }
+
+    handleObstacleAvoidance(*this);
 }
 
 void Controller::timerExpired()
@@ -329,7 +396,9 @@ void Controller::clockTick()
         dustDetected();
     }
 
-    if (obstacleSensorDriver.hasObstacle())
+    // [변경] obstacle이 사라져도 all-blocked 후진 recovery가 남아 있으면 재확인을 계속한다.
+    if (obstacleSensorDriver.hasObstacle() ||
+        obstacleSensorDriver.isBackwardRecoveryPending())
     {
         obstacleDetected();
     }
@@ -492,11 +561,74 @@ void ObstacleSensorDriver::deactivateObstacleSensor()
     clear();
 }
 
-// [변경] right sensor state 제거, front/left만 초기화
+// [변경] right sensor state 제거, front/left와 recheck state를 초기화
 void ObstacleSensorDriver::clear()
 {
     front = false;
     left = false;
+    frontAfterRightTurn = true;
+    leftAfterBackward = true;
+    frontAfterBackwardRightCheck = true;
+    backwardRecoveryPending = false;
+}
+
+// [변경] direction[2] 입력은 front/left만 갱신하고 right sensor 입력은 받지 않는다.
+void ObstacleSensorDriver::setObstacleInput(bool frontBlocked, bool leftBlocked)
+{
+    front = frontBlocked;
+    left = leftBlocked;
+    frontAfterRightTurn = true;
+    leftAfterBackward = true;
+    frontAfterBackwardRightCheck = true;
+}
+
+// [추가] right 방향은 우회전 후 front sensor 재확인값으로 저장한다.
+void ObstacleSensorDriver::setFrontAfterRightTurn(bool frontBlocked)
+{
+    frontAfterRightTurn = frontBlocked;
+}
+
+// [추가] 후진 중 left sensor와 front sensor 기반 right 확인값을 저장한다.
+void ObstacleSensorDriver::setBackwardRecheck(bool leftBlocked, bool frontBlockedForRightCheck)
+{
+    leftAfterBackward = leftBlocked;
+    frontAfterBackwardRightCheck = frontBlockedForRightCheck;
+}
+
+// [추가] 우회전 후 front가 비어 있으면 기존 right 방향으로 전진 가능하다.
+bool ObstacleSensorDriver::isFrontClearAfterRightTurn() const
+{
+    return !frontAfterRightTurn;
+}
+
+// [추가] 후진 후 비어있는 방향 선택에서 left가 우선순위이다.
+bool ObstacleSensorDriver::isLeftClearAfterBackward() const
+{
+    return !leftAfterBackward;
+}
+
+// [추가] right는 별도 sensor가 아니라 front 기반 재확인값으로 판단한다.
+bool ObstacleSensorDriver::isRightClearAfterBackward() const
+{
+    return !frontAfterBackwardRightCheck;
+}
+
+// [추가] 후진 재확인 flow가 다음 tick으로 이어져야 하는지 제공한다.
+bool ObstacleSensorDriver::isBackwardRecoveryPending() const
+{
+    return backwardRecoveryPending;
+}
+
+// [추가] 모든 후진 재확인 방향이 막힌 경우 recovery pending 상태를 저장한다.
+void ObstacleSensorDriver::markBackwardRecoveryPending()
+{
+    backwardRecoveryPending = true;
+}
+
+// [추가] 후진 재확인 flow가 끝나거나 safe mode로 전환될 때 pending 상태를 초기화한다.
+void ObstacleSensorDriver::clearBackwardRecovery()
+{
+    backwardRecoveryPending = false;
 }
 
 // [변경] right sensor 입력 제거로 front/left만 obstacle 여부에 사용

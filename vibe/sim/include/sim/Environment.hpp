@@ -13,7 +13,12 @@ namespace sim
 struct SensorSnapshot
 {
     bool dustDetected = false;
-    std::array<bool, 3> obstacleBlocked = {false, false, false};
+    // [변경] obstacle input은 front/left 두 센서만 포함한다.
+    std::array<bool, 2> obstacleBlocked = {false, false};
+    // [추가] right availability는 turnRight 후 front sensor recheck로 제공한다.
+    bool frontAfterRightTurnBlocked = false;
+    bool leftAfterBackwardBlocked = false;
+    bool frontAfterBackwardRightCheckBlocked = false;
     int batteryLevel = 100;
 };
 

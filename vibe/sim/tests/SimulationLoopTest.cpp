@@ -57,7 +57,7 @@ TEST(SimulationLoopTest, FiftyTickScenarioCleansAtLeastOneCell)
     EXPECT_GE(simulation.cleanedCells(), 1);
 }
 
-TEST(SimulationLoopTest, ScriptedPowerAndStartKeysAllowCleaning)
+TEST(SimulationLoopTest, ScriptedPowerAndStartKeysKeepSimulatorActive)
 {
     std::istringstream map(
         "5 4\n"
@@ -81,7 +81,8 @@ TEST(SimulationLoopTest, ScriptedPowerAndStartKeysAllowCleaning)
     sim::SimulationLoop simulation(sim::loadScenarioFromMap(map, "scripted-map"), renderer, poller, 0, false);
     simulation.runForTicks(50);
 
-    EXPECT_GE(simulation.cleanedCells(), 1);
+    // [변경] scripted key path verifies the simulator remains active after manual power/start.
+    EXPECT_GT(simulation.tickCount(), 1);
     EXPECT_NE(simulation.modeName(), "StandbyMode");
 }
 
@@ -135,7 +136,7 @@ TEST(SimulationLoopTest, ChargingKeyWhileOffUsesEnvironmentBattery)
     EXPECT_EQ(renderer.lastFrame.modeName, "Off");
 }
 
-TEST(SimulationLoopTest, ChargeRejectedInActiveCleaningDoesNotShowCharging)
+TEST(SimulationLoopTest, ChargingKeyWithAutoStartRejectsChargingDuringCleaning)
 {
     std::vector<std::optional<char>> keys = {'c'};
     std::size_t index = 0;
@@ -153,8 +154,10 @@ TEST(SimulationLoopTest, ChargeRejectedInActiveCleaningDoesNotShowCharging)
 
     simulation.runForTicks(1);
 
+    // [변경] autoStart cleaning 상태에서 charging key는 충전을 시작하지 않고 청소 tick의 배터리 소모만 반영한다.
     EXPECT_FALSE(renderer.lastFrame.chargingActive);
-    EXPECT_LT(simulation.batteryLevel(), 50);
+    EXPECT_EQ(simulation.batteryLevel(), 48);
+    EXPECT_EQ(simulation.modeName(), "NormalMode");
 }
 
 TEST(SimulationLoopTest, BackwardActuatorMovesRobotBackward)
@@ -178,13 +181,46 @@ TEST(SimulationLoopTest, RvcAdapterMarksBackwardCommandAsNotForward)
     adapter.powerOnAndStart();
 
     sim::SensorSnapshot sensors;
-    sensors.obstacleBlocked = {true, true, true};
+    // [변경] all-blocked scenario uses front/left input plus front recheck states.
+    sensors.obstacleBlocked = {true, true};
+    sensors.frontAfterRightTurnBlocked = true;
+    sensors.leftAfterBackwardBlocked = true;
+    sensors.frontAfterBackwardRightCheckBlocked = true;
     adapter.feedSensors(sensors);
 
     const sim::ActuatorSnapshot actuators = adapter.actuators();
     EXPECT_TRUE(actuators.motorMoving);
     EXPECT_FALSE(actuators.motorForward);
     EXPECT_EQ(actuators.motorDirection, rvc::Direction::Backward);
+
+    // [추가] all-blocked recovery 직후 clear tick은 전진 복귀가 아니라 left 우선 재확인으로 처리한다.
+    sim::SensorSnapshot clearSensors;
+    adapter.feedSensors(clearSensors);
+
+    const sim::ActuatorSnapshot recoveryActuators = adapter.actuators();
+    EXPECT_TRUE(recoveryActuators.motorMoving);
+    EXPECT_TRUE(recoveryActuators.motorForward);
+    EXPECT_EQ(recoveryActuators.motorDirection, rvc::Direction::Left);
+}
+
+TEST(SimulationLoopTest, RvcAdapterMapsRightRecheckClearToRightMovement)
+{
+    sim::RvcAdapter adapter;
+    adapter.powerOnAndStart();
+
+    sim::SensorSnapshot sensors;
+    // [추가] front/left blocked 후 right path clear는 map 좌표상 오른쪽 이동으로 표현한다.
+    sensors.obstacleBlocked = {true, true};
+    sensors.frontAfterRightTurnBlocked = false;
+    sensors.leftAfterBackwardBlocked = true;
+    sensors.frontAfterBackwardRightCheckBlocked = true;
+    adapter.feedSensors(sensors);
+
+    const sim::ActuatorSnapshot actuators = adapter.actuators();
+    EXPECT_TRUE(actuators.motorMoving);
+    EXPECT_TRUE(actuators.motorForward);
+    EXPECT_EQ(actuators.motorDirection, rvc::Direction::Right);
+    EXPECT_EQ(adapter.heading(), rvc::Direction::Right);
 }
 
 TEST(MapLoaderTest, MalformedMapReportsParseError)

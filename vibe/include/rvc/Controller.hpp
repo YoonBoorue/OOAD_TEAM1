@@ -31,7 +31,8 @@ public:
     LowBatteryMode lowBatteryMode;
     OperatingMode* currentMode;
 
-    Controller() = default;
+    // [추가] simulator/test에서 Controller stack address 재사용 시 stale state를 제거한다.
+    Controller();
 
     void powerButtonPressed();
     void startButtonPressed();
@@ -40,6 +41,7 @@ public:
     void lowBatteryDetected();
     void lowBatteryCleared();
     void dustDetected();
+    // [변경] f8be8cc의 direction[3]에서 right sensor input을 제거한다.
     void obstacleDetected(const bool direction[2]);
     void obstacleDetected();
     void timerExpired();
