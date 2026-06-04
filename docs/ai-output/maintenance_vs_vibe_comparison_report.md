@@ -45,7 +45,7 @@
 | 오른쪽 확인 | `ObstacleProcessor` 내부 `checkR` 상태로 우회전 후 전방 재확인 | `frontAfterRightTurn`, `decideDirectionAfterRightTurn()`로 명시적 재확인 |
 | 후진 recovery | motor의 forward 상태와 `checkR` 조합으로 처리 | `backwardRecoveryPending`으로 후진 recovery 상태를 명시적으로 유지 |
 | simulator | 기존 CLI script simulator 중심 | script simulator + map simulator + adapter 좌표 변환 |
-| 문서 산출물 | production code/test 중심으로 변경 반영 | SRS, SDD, SSD/SD/class/state `.puml`, 변경 요약 문서까지 반영 |
+| 문서 산출물 | production code/test 중심으로 변경 반영 | SRS, SSD/SD/class/state `.puml`, 변경 요약 문서에 반영. 단, `sdd.md` 일부 표에는 오래된 `direction[3]` 설명이 잔존 |
 
 핵심 차이는 상태 표현 방식이다. Maintenance는 변경을 기존 processor 흐름 안에 작게 흡수했다. Vibe는 센서 재확인 상태를 driver/processor/controller에 명시적으로 나누어 표현했다.
 
@@ -89,7 +89,7 @@
 | all-blocked 후 후진 recovery | 만족 | 만족 |
 | 후진 중 왼쪽 우선 | 만족 | 만족 |
 | 반복 후진 상황에서 잘못된 전진 복귀 방지 | processor state로 처리 | `backwardRecoveryPending`으로 명시 처리 |
-| 문서/다이어그램 반영 | production code/test 중심, docs/ai-output 일부 설명은 별도 정합성 확인 필요 | SRS/SDD/PUML에 반영 |
+| 문서/다이어그램 반영 | production code/test 중심, docs/ai-output 일부 설명은 별도 정합성 확인 필요 | 대부분 반영. 단, `sdd.md` 일부 `direction[3]` 설명은 추가 정합성 보정 필요 |
 | system test 산출물 보존 | 좋음 | 42개 존재 및 정상 |
 
 결론적으로 두 구현은 기능적으로 같은 요구사항을 수행한다. Maintenance는 system scenario 수가 더 많고, Vibe는 문서/설계 추적성과 simulator 확장이 강하다.
@@ -106,7 +106,7 @@
 
 ### Vibe Coding 팀
 
-- SRS/SDD/PUML까지 요구사항 변경을 추적 가능하게 반영했다.
+- SRS/PUML과 변경 요약 문서까지 요구사항 변경을 추적 가능하게 반영했다. 다만 `sdd.md` 일부 표에는 오래된 `direction[3]` 설명이 남아 있어 문서 정합성 보정이 필요하다.
 - right recheck, backward recheck, map simulator 좌표 변환까지 더 명시적으로 모델링했다.
 - `backwardRecoveryPending`으로 후진 recovery 상태를 분리해 앞뒤 왕복 같은 오류를 잡았다.
 - 대신 산출물이 많아지면서 system test script, traceability, simulator test처럼 함께 관리해야 할 대상도 늘어났다.
@@ -122,7 +122,7 @@
 
 ## 10. 최종 결론
 
-두 팀 모두 오른쪽 센서 제거 요구사항의 핵심 기능은 구현했다. Maintenance는 기존 코드와 system test를 안정적으로 유지하는 데 강했고, Vibe Coding은 요구사항 변경을 문서, 설계, unit test, simulator까지 넓게 반영하는 데 강했다.
+두 팀 모두 오른쪽 센서 제거 요구사항의 핵심 기능은 구현했다. Maintenance는 기존 코드와 system test를 안정적으로 유지하는 데 강했고, Vibe Coding은 요구사항 변경을 문서, 설계, unit test, simulator까지 넓게 반영하는 데 강했다. 단, Vibe 문서 중 `sdd.md` 일부 항목은 최신 코드와 완전히 일치하도록 추가 정리가 필요하다.
 
 정확히 말하면, Maintenance 팀 구현은 빌드와 테스트 안정성이 높고 현재 코드 기준으로 오른쪽 센서 제거 요구사항도 반영되어 있다. 다만 오른쪽 재확인과 후진 recovery 상태가 `ObstacleProcessor` 내부 `checkR` 상태에 묻혀 있어, Vibe 구현보다 설계 의도가 명시적으로 드러나지는 않는다.
 
