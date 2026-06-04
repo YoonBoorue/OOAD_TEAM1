@@ -5,13 +5,9 @@
 namespace rvc
 {
 
-// [변경] right sensor 입력 제거, front/left 상태와 우회전 후 front 재확인 상태 저장
-Direction ObstacleProcessor::decideDirection(const ObstacleSensorDriver& obstacleSensorDriver)
+// [변경] right sensor 입력을 읽지 않고 front/left만으로 1차 회피 방향을 결정한다.
+Direction ObstacleProcessor::decideDirection(const ObstacleSensorDriver& obstacleSensorDriver) const
 {
-    frontBlocked = obstacleSensorDriver.front;
-    leftBlocked = obstacleSensorDriver.left;
-    frontBlockedAfterRightTurn = obstacleSensorDriver.front && obstacleSensorDriver.left;
-
     if (!obstacleSensorDriver.front)
     {
         return Direction::Forward;
@@ -25,21 +21,28 @@ Direction ObstacleProcessor::decideDirection(const ObstacleSensorDriver& obstacl
     return Direction::Right;
 }
 
-// [추가] 우회전 후 front sensor 재확인 결과를 processor 내부 상태로 제공
-bool ObstacleProcessor::isFrontClearAfterRightTurn() const
+// [추가] 우회전 후 front sensor 재확인 결과로 right 진행 가능 여부를 결정한다.
+Direction ObstacleProcessor::decideDirectionAfterRightTurn(
+    const ObstacleSensorDriver& obstacleSensorDriver) const
 {
-    return !frontBlockedAfterRightTurn;
+    if (obstacleSensorDriver.isFrontClearAfterRightTurn())
+    {
+        return Direction::Forward;
+    }
+
+    return Direction::Backward;
 }
 
-// [추가] all-blocked 후진 회피 후 비어있는 방향을 왼쪽 우선으로 선택
-Direction ObstacleProcessor::decideDirectionAfterBackwardRecheck() const
+// [추가] 후진 중 재확인된 빈 방향을 선택하되 left를 우선한다.
+Direction ObstacleProcessor::decideDirectionAfterBackwardRecheck(
+    const ObstacleSensorDriver& obstacleSensorDriver) const
 {
-    if (!leftBlocked)
+    if (obstacleSensorDriver.isLeftClearAfterBackward())
     {
         return Direction::Left;
     }
 
-    if (!frontBlockedAfterRightTurn)
+    if (obstacleSensorDriver.isRightClearAfterBackward())
     {
         return Direction::Right;
     }
