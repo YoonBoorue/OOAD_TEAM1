@@ -6,7 +6,7 @@ namespace rvc
     class ObstacleSensorDriver
     {
     private:
-        bool direction[3];
+        bool direction[2];
         bool active;
 
     public:

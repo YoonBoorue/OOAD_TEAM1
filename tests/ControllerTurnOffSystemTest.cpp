@@ -288,10 +288,9 @@ TEST(ControllerTurnOffSystemTest, TurnOffThenObstacleDetectedDoesNothing)
 
     ASSERT_FALSE(controller.isPowerOn());
 
-    const bool direction[3] = {
+    const bool direction[2] = {
         true,
-        false,
-        true};
+        false};
 
     controller.obstacleDetected(direction);
 

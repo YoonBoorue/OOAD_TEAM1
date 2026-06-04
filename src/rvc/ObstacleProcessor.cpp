@@ -3,7 +3,7 @@
 namespace rvc
 {
     ObstacleProcessor::ObstacleProcessor()
-        : direction_{false, false, false}, checkR(false) {}
+        : direction_{false, false}, checkR(false) {}
 
     void ObstacleProcessor::decideDirection(const std::array<bool, 2> &dir, const OperatingMode &currentMode, MotorDriver &motor)
     {

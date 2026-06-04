@@ -11,7 +11,7 @@ namespace rvc
     class ObstacleProcessor
     {
     private:
-        std::array<bool, 3> direction_;
+        std::array<bool, 2> direction_;
         bool checkR;
 
     public:
