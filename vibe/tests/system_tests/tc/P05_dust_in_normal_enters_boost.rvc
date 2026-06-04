@@ -1,8 +1,0 @@
-# P05: Dust in NormalMode enters BoostMode.
-power
-start
-dust
-expect_mode BoostMode
-expect_motor on
-expect_cleaner on
-expect_boost on

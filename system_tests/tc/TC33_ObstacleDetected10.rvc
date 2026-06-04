@@ -1,14 +1,16 @@
 # TC33 : ObstacleDetected10
-# Precondition : NormalMode, forward=true/false
-# Action : all directions blocked
-# Expected : moveBackward, forward=false
+# Precondition : NormalMode, motorDirection=FRONT, forward=true/false
+# Action : front+left blocked → turnRight (checkR=true), front still blocked → BACK
+# Expected : motorDirection=RIGHT (intermediate), then forward=false
 
 # Case A: forward=true
 power
 start
 expect mode NormalMode
-expect motorForward true
-obstacle 1 1 1
+expect motorDirection FRONT
+obstacle 1 1
+expect motorDirection RIGHT
+obstacle 1 0
 expect mode NormalMode
 expect cleaner on
 expect motor moving
@@ -18,11 +20,16 @@ expect motorForward false
 power
 power
 start
+expect motorDirection FRONT
 
 # Case B: forward=false
-obstacle 1 1 1
+obstacle 1 1
+obstacle 1 0
 expect motorForward false
-obstacle 1 1 1
+expect motorDirection FRONT
+obstacle 0 1
+expect motorDirection RIGHT
+obstacle 1 0
 expect mode NormalMode
 expect cleaner on
 expect motor moving
