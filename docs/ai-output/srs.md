@@ -42,7 +42,7 @@ RVC Control SW는 로봇 청소기의 제어 소프트웨어이다. 시스템은
 - system은 power-on 이후 `StandbyMode`에서 대기한다.
 - 사용자가 `StartButton`을 누르면 `NormalMode`로 전환하여 이동과 청소를 시작한다.
 - 청소 중 먼지가 감지되면 `BoostMode`로 전환하고, boost 시간이 끝나면 `NormalMode`로 복귀한다.
-- 장애물이 감지되면 front/left/right 상태를 기준으로 회피 방향을 결정한다.
+- ~~장애물이 감지되면 front/left/right 상태를 기준으로 회피 방향을 결정한다.~~ [삭제] 장애물이 감지되면 front/left 센서 입력을 기준으로 회피 방향을 결정하며, right는 센서 입력이 아니라 `turnRight()` 후 front 센서 재확인으로 판단한다. [변경]
 - 배터리가 low threshold 이하가 되면 `LowBatteryMode`로 전환하고 motor/cleaner를 정지한다.
 - 충전이 허용되는 상태에서는 battery charging state를 관리한다.
 
@@ -55,7 +55,7 @@ RVC Control SW는 로봇 청소기의 제어 소프트웨어이다. 시스템은
 | Power control | `PowerButton` 입력에 따른 on/off 전환 |
 | Cleaning mode control | `StandbyMode`, `NormalMode`, `BoostMode`, `LowBatteryMode` 전환 |
 | Movement control | forward, left, right, backward, stop 동작 명령 |
-| Obstacle avoidance | front/left/right obstacle 상태에 따른 회피 방향 결정 |
+| Obstacle avoidance | ~~front/left/right obstacle 상태에 따른 회피 방향 결정~~ [삭제] front/left obstacle 센서 입력과 `turnRight()` 후 front 재확인에 따른 회피 방향 결정 [변경] |
 | Dust handling | dust signal에 따른 boost mode 전환 및 timer expiry 처리 |
 | Battery handling | charging, stop charging, low battery event, recovery 처리 |
 | Test simulator interface | system test script 실행을 위한 simulator command/expect interface |
@@ -82,7 +82,7 @@ SRS 관점에서 system boundary는 `:RVCSystem`이다. 외부 actor/device는 s
 | `StartButton` | user의 cleaning start/standby input을 system에 전달한다. | `startButtonPressed()` |
 | `BatteryDriver` | battery level, charging 가능 여부, low-battery event를 제공한다. | `lowBatteryDetected()`, `lowBatteryCleared()`, `chargeBattery()`, `stopCharging()` |
 | `DustSensorDriver` | dust detection signal을 제공한다. | `dustDetected()` |
-| `ObstacleSensorDriver` | front/left/right obstacle 정보를 제공한다. | `obstacleDetected(direction)` |
+| `ObstacleSensorDriver` | ~~front/left/right obstacle 정보를 제공한다.~~ [삭제] front/left obstacle 정보를 제공한다. right는 센서 입력으로 제공하지 않고, 우회전 후 front 센서로 재확인한다. [변경] | `obstacleDetected(direction)` |
 | `DigitalClockTick` | periodic behavior와 boost timer expiry를 나타내는 외부 event 개념이다. | `timerExpired()`, `clockTick()` |
 | `MotorDriver` | system의 movement output command를 실행한다. | Output commands: `moveForward()`, `turnLeft()`, `turnRight()`, `moveBackward()`, `stopMoving()` |
 | `CleanerDriver` | system의 cleaner output command를 실행한다. | Output commands: `startCleaning()`, `stopCleaning()`, boost setting |
@@ -130,11 +130,11 @@ SRS 관점에서 system boundary는 `:RVCSystem`이다. 외부 actor/device는 s
 
 | ID | Requirement | Source | Current evidence |
 |---|---|---|---|
-| FR-UC5-01 | `ObstacleSensorDriver`는 front, left, right 방향의 obstacle을 감지해야 한다. | source: project artifact | Partial: 현재 driver는 active state만 보유 |
+| FR-UC5-01 | `ObstacleSensorDriver`는 ~~front, left, right~~ [삭제] front, left 방향의 obstacle을 감지해야 한다. right obstacle은 별도 센서 입력으로 감지하지 않고 `turnRight()` 후 front 센서 재확인으로 판단해야 한다. [변경] | source: project artifact | Partial: 현재 driver는 active state만 보유 |
 | FR-UC5-02 | `ObstacleSensorDriver`는 obstacle 정보를 system에 전달해야 한다. | source: project artifact | Partial: simulator/test가 `obstacleDetected(direction)` 직접 호출 |
 | FR-UC5-03 | obstacle avoidance 중 system은 `CleanerDriver`에 cleaning stop을 요청해야 한다. | source: project artifact | Gap/Inconsistent: 현재 구현과 테스트는 cleaner 유지 |
-| FR-UC5-04 | system은 obstacle sensor input을 기준으로 avoidance direction을 결정해야 한다. | source: project artifact | Supported |
-| FR-UC5-05 | current movement direction이 blocked이면 system은 가능한 경우 left 또는 right 등 available direction을 선택해야 한다. | source: project artifact | Supported |
+| FR-UC5-04 | system은 obstacle sensor input을 기준으로 avoidance direction을 결정해야 한다. 단, ~~right sensor input~~ [삭제] right sensor input은 사용하지 않으며, right 방향 가능 여부는 `turnRight()` 후 front sensor 재확인으로 결정해야 한다. [추가] | source: project artifact | Supported |
+| FR-UC5-05 | current movement direction이 blocked이면 system은 가능한 경우 left 또는 ~~right~~ [삭제] right-turn-then-front-check 등 available direction을 선택해야 한다. [변경] | source: project artifact | Supported |
 | FR-UC5-06 | obstacle avoidance 이후 current mode가 `NormalMode` 또는 `BoostMode`이면 system은 movement와 cleaning을 재개해야 한다. | source: project artifact | Supported |
 
 ### 5.7 UC6 - Adjust Boost Mode
@@ -193,15 +193,15 @@ SRS 관점에서 system boundary는 `:RVCSystem`이다. 외부 actor/device는 s
 
 | ID | Requirement | Source | Current evidence |
 |---|---|---|---|
-| FR-UC13-01 | right direction이 avoidance direction으로 선택되면 system은 `MotorDriver`에 right turn을 요청해야 한다. | source: project artifact | Supported |
-| FR-UC13-02 | right turn 이후 적절한 경우 system은 forward movement로 돌아가야 한다. | source: project artifact | Supported |
+| FR-UC13-01 | right direction이 avoidance direction으로 선택되면 system은 `MotorDriver`에 right turn을 요청해야 한다. right direction 선택은 ~~right sensor input~~ [삭제] right sensor input으로 판단하지 않는다; `turnRight()` 후 front sensor 재확인으로 판단한다. [추가] | source: project artifact | Supported |
+| FR-UC13-02 | right turn 이후 적절한 경우 system은 forward movement로 돌아가야 한다. 이때 front sensor가 비어 있으면 전진하여 기존 right 이동 결과와 동일하게 처리한다. [추가] | source: project artifact | Supported |
 
 ### 5.15 UC14 - Move Backward
 
 | ID | Requirement | Source | Current evidence |
 |---|---|---|---|
 | FR-UC14-01 | current direction이 blocked이면 system은 `MotorDriver`에 backward movement를 요청해야 한다. | source: project artifact | Supported |
-| FR-UC14-02 | backward movement 이후 left 또는 right direction이 available하면 system은 available direction으로 turn해야 한다. | source: project artifact | Supported |
+| FR-UC14-02 | backward movement 이후 left 또는 ~~right direction~~ [삭제] right-turn-then-front-check direction이 available하면 system은 available direction으로 turn해야 한다. left가 우선순위이며, right는 별도 sensor input 없이 회전 후 front sensor로 확인한다. [변경] | source: project artifact | Supported |
 
 ### 5.16 UC15 - Enter Low Battery Mode
 
@@ -295,8 +295,8 @@ SRS 관점에서 system boundary는 `:RVCSystem`이다. 외부 actor/device는 s
 | Actor | `ObstacleSensorDriver` |
 | Purpose | obstacle detection 상황에서 collision을 회피한다. |
 | Precondition | system이 `NormalMode` 또는 `BoostMode`이다. |
-| Main Flow | 1. `ObstacleSensorDriver`가 front/left/right obstacle signal을 system에 전달한다. 2. system이 avoidance direction을 결정한다. 3. system이 selected direction으로 movement command를 전달한다. 4. 가능한 경우 movement와 cleaning을 재개한다. |
-| Alternative / Exception | front blocked and left free -> left turn; front blocked and right free -> right turn; front/left/right blocked -> backward movement 후 available direction 탐색. |
+| Main Flow | 1. `ObstacleSensorDriver`가 ~~front/left/right~~ [삭제] front/left obstacle signal을 system에 전달한다. [변경] 2. system이 avoidance direction을 결정한다. 3. system이 selected direction으로 movement command를 전달한다. 4. right 방향은 sensor input이 아니라 `turnRight()` 후 front sensor 재확인으로 판단한다. [추가] 5. 가능한 경우 movement와 cleaning을 재개한다. [변경] |
+| Alternative / Exception | front blocked and left free -> left turn; ~~front blocked and right free -> right turn~~ [삭제] front blocked and left blocked -> right turn 후 front sensor 재확인, 비어 있으면 forward movement로 기존 right 이동 결과를 유지한다 [변경]; ~~front/left/right blocked -> backward movement 후 available direction 탐색.~~ [삭제] front/left가 막히고 right 확인도 불가/blocked이면 right turn -> left turn(front 복귀) -> backward movement 중 right 방향을 front sensor로 확인하고, 이후 비어있는 방향으로 이동하되 left를 우선한다. [변경] |
 | Related FR | FR-UC5-01 ~ FR-UC5-06 |
 | Source | source: project artifact |
 
@@ -393,9 +393,9 @@ SRS 관점에서 system boundary는 `:RVCSystem`이다. 외부 actor/device는 s
 |---|---|
 | Actor | `MotorDriver` |
 | Purpose | obstacle avoidance 결과에 따라 right direction으로 이동한다. |
-| Precondition | system이 `NormalMode` 또는 `BoostMode`이고 right direction이 available하다. |
-| Triggering incoming operation | `obstacleDetected(direction)` 처리 중 avoidance direction이 `RIGHT`로 결정될 때 발생한다. |
-| Main Flow | 1. system이 avoidance direction으로 `RIGHT`를 선택한다. 2. system이 `MotorDriver`에 `turnRight()`를 요청한다. 3. motor direction이 right로 변경되고 forward movement를 재개한다. |
+| Precondition | system이 `NormalMode` 또는 `BoostMode`이고 ~~right direction이 available하다.~~ [삭제] right sensor input 없이 right direction 확인이 필요하다. [변경] |
+| Triggering incoming operation | `obstacleDetected(direction)` 처리 중 avoidance direction이 `RIGHT`로 결정될 때 발생한다. 이 결정은 ~~right sensor input~~ [삭제] right sensor input이 아니라 front/left sensor 상태와 `turnRight()` 후 front 재확인 결과를 사용한다. [추가] |
+| Main Flow | 1. system이 avoidance direction으로 `RIGHT`를 선택한다. 2. system이 `MotorDriver`에 `turnRight()`를 요청한다. 3. motor direction이 right로 변경되고 ~~forward movement를 재개한다.~~ [삭제] front sensor를 재확인한다. [변경] 4. front가 비어 있으면 forward movement를 재개하여 기존 right 이동 결과와 동일하게 처리한다. [추가] |
 | Alternative / Exception | N/A |
 | Related FR | FR-UC13-01, FR-UC13-02 |
 | Source | source: project artifact |
@@ -405,10 +405,10 @@ SRS 관점에서 system boundary는 `:RVCSystem`이다. 외부 actor/device는 s
 | Field | Content |
 |---|---|
 | Actor | `MotorDriver` |
-| Purpose | front/left/right가 모두 blocked된 경우 backward movement로 회피한다. |
-| Precondition | system이 `NormalMode` 또는 `BoostMode`이고 front/left/right directions가 blocked 상태이다. |
+| Purpose | ~~front/left/right가 모두 blocked된 경우~~ [삭제] front/left가 blocked이고 right는 회전 후 front sensor 재확인으로도 진행 불가한 경우 backward movement로 회피한다. [변경] |
+| Precondition | system이 `NormalMode` 또는 `BoostMode`이고 ~~front/left/right directions가 blocked 상태이다.~~ [삭제] front/left directions가 blocked이며, right는 별도 sensor input 없이 `turnRight()` 후 front sensor로 blocked 여부를 확인해야 한다. [변경] |
 | Triggering incoming operation | `obstacleDetected(direction)` 처리 중 avoidance direction이 `BACK`으로 결정될 때 발생한다. |
-| Main Flow | 1. system이 avoidance direction으로 `BACK`을 선택한다. 2. system이 `MotorDriver`에 `moveBackward()`를 요청한다. 3. 이후 available direction이 생기면 left/right turn을 수행한다. |
+| Main Flow | 1. system이 avoidance direction으로 `BACK`을 선택한다. 2. system이 `MotorDriver`에 `moveBackward()`를 요청한다. 3. ~~이후 available direction이 생기면 left/right turn을 수행한다.~~ [삭제] all-blocked equivalent 상황에서는 오른쪽 회전 -> 왼쪽 회전(front 복귀) -> 뒤로 이동하면서 오른쪽을 front sensor로 확인하고, 이후 비어있는 방향으로 이동하되 왼쪽을 우선한다. [변경] |
 | Alternative / Exception | available side direction이 없으면 backward state를 유지할 수 있다(source: implementation/test). |
 | Related FR | FR-UC14-01, FR-UC14-02 |
 | Source | source: project artifact; no-side-clear behavior source: implementation/test |
@@ -580,8 +580,8 @@ Output command는 `:RVCSystem` 내부 decision 결과로 actuator/driver에 전�
 | 항목 | 내용 |
 |---|---|
 | Related UC | UC5, UC12, UC13, UC14 |
-| Precondition | system이 `NormalMode` 또는 `BoostMode`이고 direction input이 valid하다. |
-| Postcondition | obstacle state에 따라 forward/left/right/back output command가 선택된다. |
+| Precondition | system이 `NormalMode` 또는 `BoostMode`이고 direction input이 valid하다. direction input은 ~~front/left/right~~ [삭제] front/left sensor input만 포함하며, right는 센서 입력으로 사용하지 않는다. [변경] |
+| Postcondition | obstacle state에 따라 forward/left/right/back output command가 선택된다. right output command는 센서 입력 right가 아니라 `turnRight()` 후 front sensor 재확인으로 선택된다. [추가] |
 | Output commands | `moveForward()`, `turnLeft()`, `turnRight()`, `moveBackward()` 중 하나 이상 |
 | Side effects | artifact 기준으로 avoidance 중 cleaner stop 후 resume이 요구된다. 현재 구현은 cleaner mode를 유지한다. |
 | Source | source: project artifact; current behavior source: implementation/test |
@@ -609,7 +609,7 @@ Output command는 `:RVCSystem` 내부 decision 결과로 actuator/driver에 전�
 | `LowBatteryMode` | battery 부족 시 cleaning/movement를 제한하는 safety mode | source: project artifact |
 | `BatteryDriver` | battery level, charging, low-battery threshold를 관리하는 external/device abstraction | source: project artifact |
 | `DustSensorDriver` | dust signal을 제공하는 sensor abstraction | source: project artifact |
-| `ObstacleSensorDriver` | front/left/right obstacle 정보를 제공하는 sensor abstraction | source: project artifact |
+| `ObstacleSensorDriver` | ~~front/left/right obstacle 정보를 제공하는 sensor abstraction~~ [삭제] front/left obstacle 정보를 제공하는 sensor abstraction. right obstacle 정보는 별도 sensor input으로 제공하지 않고, `turnRight()` 후 front sensor 재확인으로 대체한다. [변경] | source: project artifact |
 | `MotorDriver` | forward, left, right, backward, stop movement command를 수행하는 actuator abstraction | source: project artifact |
 | `CleanerDriver` | cleaning start/stop 및 boost cleaning behavior를 수행하는 actuator abstraction | source: project artifact |
 | `DigitalClockTick` | periodic behavior와 timer expiry를 나타내는 event concept | source: project artifact |
@@ -631,11 +631,11 @@ Output command는 `:RVCSystem` 내부 decision 결과로 actuator/driver에 전�
 | FR-UC2-02 | UC2 | `clockTick()` artifact-only / not implemented | None | None | Gap |
 | FR-UC3-01 | UC3 | Trigger: `startButtonPressed()` or `obstacleDetected(direction)`; output command: `moveForward()` | `ButtonTest.cpp`, `ControllerObstacleDetectedTest.cpp` | TC03, TC24-TC43 | Supported |
 | FR-UC4-01 | UC4 | Trigger: `startButtonPressed()` or `dustDetected()`; output command: `startCleaning()` / boost setting | `ButtonTest.cpp`, `DustDetectedTest.cpp` | TC03, TC19, TC24-TC43 | Supported |
-| FR-UC5-01 | UC5 | `obstacleDetected(direction)` | `ControllerObstacleDetectedTest.cpp` | TC24-TC43 | Partial |
-| FR-UC5-02 | UC5 | `obstacleDetected(direction)` | `ControllerObstacleDetectedTest.cpp` | TC24-TC43 | Partial |
+| FR-UC5-01 | UC5 | `obstacleDetected(direction)` with ~~front/left/right~~ [삭제] front/left sensor input and right-turn front recheck [변경] | `ControllerObstacleDetectedTest.cpp` | TC24-TC43 | Partial |
+| FR-UC5-02 | UC5 | `obstacleDetected(direction)` with ~~front/left/right~~ [삭제] front/left obstacle information only; right is not sensor input [변경] | `ControllerObstacleDetectedTest.cpp` | TC24-TC43 | Partial |
 | FR-UC5-03 | UC5 | Trigger: `obstacleDetected(direction)`; expected output command: `stopCleaning()` during avoidance | None matching artifact behavior | None matching artifact behavior | Gap/Inconsistent |
-| FR-UC5-04 | UC5 | `obstacleDetected(direction)` | `ControllerObstacleDetectedTest.cpp` | TC24-TC43 | Supported |
-| FR-UC5-05 | UC5 | Trigger: `obstacleDetected(direction)`; output commands: `turnLeft()`, `turnRight()`, `moveBackward()` | `ControllerObstacleDetectedTest.cpp` | TC24-TC43 | Supported |
+| FR-UC5-04 | UC5 | `obstacleDetected(direction)`; right direction decision uses `turnRight()` + front sensor recheck, not right sensor input [추가] | `ControllerObstacleDetectedTest.cpp` | TC24-TC43 | Supported |
+| FR-UC5-05 | UC5 | Trigger: `obstacleDetected(direction)`; output commands: `turnLeft()`, `turnRight()`, `moveBackward()`; right remains an avoidance direction/output command [추가] | `ControllerObstacleDetectedTest.cpp` | TC24-TC43 | Supported |
 | FR-UC5-06 | UC5 | Trigger: `obstacleDetected(direction)`; output commands: `moveForward()`, `startCleaning()`/cleaner remains active | `ControllerObstacleDetectedTest.cpp` | TC24-TC43 | Supported |
 | FR-UC6-01 | UC6 | `dustDetected()` | `DustDetectedTest.cpp` | TC19-TC23, TC44 | Partial |
 | FR-UC6-02 | UC6 | `dustDetected()` | `DustDetectedTest.cpp` | TC19-TC23, TC44 | Partial |
@@ -654,10 +654,10 @@ Output command는 `:RVCSystem` 내부 decision 결과로 actuator/driver에 전�
 | FR-UC11-02 | UC11 | `powerButtonPressed()` | `ControllerTurnOffSystemTest.cpp`, `ButtonTest.cpp` | TC02 | Supported |
 | FR-UC12-01 | UC12 | Trigger: `obstacleDetected(direction)`; output command: `turnLeft()` | `ControllerObstacleDetectedTest.cpp` | TC24, TC28-TC29, TC34, TC38-TC39 | Supported |
 | FR-UC12-02 | UC12 | Trigger: `obstacleDetected(direction)`; output commands: `turnLeft()`, `moveForward()` | `ControllerObstacleDetectedTest.cpp` | TC24, TC28-TC29, TC34, TC38-TC39 | Supported |
-| FR-UC13-01 | UC13 | Trigger: `obstacleDetected(direction)`; output command: `turnRight()` | `ControllerObstacleDetectedTest.cpp` | TC30, TC36, TC40 | Supported |
-| FR-UC13-02 | UC13 | Trigger: `obstacleDetected(direction)`; output commands: `turnRight()`, `moveForward()` | `ControllerObstacleDetectedTest.cpp` | TC30, TC36, TC40 | Supported |
+| FR-UC13-01 | UC13 | Trigger: `obstacleDetected(direction)`; output command: `turnRight()`; ~~right sensor input required~~ [삭제] right sensor input not required [변경] | `ControllerObstacleDetectedTest.cpp` | TC30, TC36, TC40 | Supported |
+| FR-UC13-02 | UC13 | Trigger: `obstacleDetected(direction)`; output commands: `turnRight()`, front sensor recheck, `moveForward()` when clear [변경] | `ControllerObstacleDetectedTest.cpp` | TC30, TC36, TC40 | Supported |
 | FR-UC14-01 | UC14 | Trigger: `obstacleDetected(direction)`; output command: `moveBackward()` | `ControllerObstacleDetectedTest.cpp` | TC26, TC28, TC32-TC33, TC36, TC38, TC42-TC43 | Supported |
-| FR-UC14-02 | UC14 | Trigger: `obstacleDetected(direction)`; output commands: `turnLeft()`/`turnRight()` after backward | `ControllerObstacleDetectedTest.cpp` | TC24, TC29-TC30, TC34, TC39-TC40 | Supported |
+| FR-UC14-02 | UC14 | Trigger: `obstacleDetected(direction)`; output commands: `turnLeft()`/`turnRight()` after backward, with left priority and right checked by turn + front sensor recheck [변경] | `ControllerObstacleDetectedTest.cpp` | TC24, TC29-TC30, TC34, TC39-TC40 | Supported |
 | FR-UC15-01 | UC15 | `lowBatteryDetected()` | `ControllerEnterLowBatteryModeTest.cpp` | TC15-TC18, TC45 | Partial |
 | FR-UC15-02 | UC15 | `lowBatteryDetected()` | `ControllerEnterLowBatteryModeTest.cpp` | TC15-TC18, TC45 | Supported |
 | FR-UC16-01 | UC16 | `stopCharging()` direct request; `chargingTick()` auto-stops at full battery | `ControllerStopChargingTest.cpp` | TC45 direct `stop-charge`; TC13 automatic full-charge stop via `charge-tick` | Supported |

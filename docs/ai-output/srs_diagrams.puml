@@ -27,6 +27,12 @@ RVCSystem -> MotorDriver: turnLeft()
 
 RVCSystem -> MotorDriver: turnRight()
 
+note right of MotorDriver
+turnRight remains an output command.
+It is followed by front sensor recheck
+when checking right availability.
+end note
+
 RVCSystem -> MotorDriver: moveBackward()
 
 @enduml
