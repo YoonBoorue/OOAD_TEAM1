@@ -1,0 +1,13 @@
+# N28: Timer after returning from BoostMode does not leave NormalMode.
+power
+start
+dust
+timer
+expect_mode NormalMode
+expect_cleaner on
+expect_boost off
+timer
+expect_mode NormalMode
+expect_motor on
+expect_cleaner on
+expect_boost off

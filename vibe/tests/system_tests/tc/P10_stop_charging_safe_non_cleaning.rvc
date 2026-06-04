@@ -1,0 +1,12 @@
+# P10: Stop charging keeps system in a safe non-cleaning state.
+power
+low_battery
+low_battery_cleared
+charge
+expect_charging on
+stop_charge
+expect_mode StandbyMode
+expect_charging off
+expect_motor off
+expect_cleaner off
+expect_boost off

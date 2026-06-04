@@ -1,0 +1,8 @@
+# N27: Obstacle all blocked in StandbyMode does not start motor.
+power
+obstacle_all
+expect_mode StandbyMode
+expect_motor off
+expect_cleaner off
+expect_boost off
+expect_direction Forward

@@ -1,0 +1,6 @@
+# N05: Timer while Off does not change mode.
+timer
+expect_mode Off
+expect_motor off
+expect_cleaner off
+expect_boost off

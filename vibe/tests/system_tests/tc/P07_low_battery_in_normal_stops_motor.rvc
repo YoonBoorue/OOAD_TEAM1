@@ -1,0 +1,8 @@
+# P07: Low battery in NormalMode enters LowBatteryMode and stops motor.
+power
+start
+low_battery
+expect_mode LowBatteryMode
+expect_motor off
+expect_cleaner off
+expect_boost off

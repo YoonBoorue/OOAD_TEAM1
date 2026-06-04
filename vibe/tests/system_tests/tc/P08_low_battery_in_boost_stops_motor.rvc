@@ -1,0 +1,10 @@
+# P08: Low battery in BoostMode enters LowBatteryMode and stops motor.
+power
+start
+dust
+expect_mode BoostMode
+low_battery
+expect_mode LowBatteryMode
+expect_motor off
+expect_cleaner off
+expect_boost off

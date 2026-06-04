@@ -1,0 +1,9 @@
+# P11: Obstacle front blocked and left clear keeps cleaning active.
+power
+start
+obstacle_front
+expect_mode NormalMode
+expect_motor on
+expect_cleaner on
+expect_boost off
+expect_direction Forward

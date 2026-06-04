@@ -1,0 +1,8 @@
+# N07: Timer while NormalMode does not change mode.
+power
+start
+timer
+expect_mode NormalMode
+expect_motor on
+expect_cleaner on
+expect_boost off
